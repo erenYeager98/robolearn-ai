@@ -1,30 +1,38 @@
-from fastapi import FastAPI, File, UploadFile
-from pydantic import BaseModel
+from fastapi import FastAPI, WebSocket
+from fastapi.middleware.cors import CORSMiddleware
+import torch
 import whisper
 import io
-
-# Initialize the Whisper Tiny model
-model = whisper.load_model("tiny")
+import base64
+import numpy as np
+import wave
 
 app = FastAPI()
 
-class SpeechTextResponse(BaseModel):
-    text: str
+# CORS setup
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-@app.post("/speech-to-text", response_model=SpeechTextResponse)
-async def speech_to_text(file: UploadFile = File(...)):
-    # Read the file
-    audio_bytes = await file.read()
-    
-    # Load audio to Whisper
-    audio = whisper.load_audio(io.BytesIO(audio_bytes))
-    audio = whisper.pad_or_trim(audio)
+model = whisper.load_model("tiny")
 
-    # Transcribe using Whisper model
-    result = model.transcribe(audio)
-    
-    return {"text": result["text"]}
+@app.websocket("/ws/audio")
+async def websocket_endpoint(websocket: WebSocket):
+    await websocket.accept()
+    audio_buffer = bytearray()
+    try:
+        while True:
+            data = await websocket.receive_bytes()
+            audio_buffer.extend(data)
+            if len(audio_buffer) > 16000 * 5:  # 5 seconds of audio
+                audio_np = np.frombuffer(audio_buffer, np.int16).astype(np.float32) / 32768.0
+                audio_buffer.clear()
+                result = model.transcribe(audio_np, language='en', fp16=False)
+                await websocket.send_json({"text": result['text']})
+    except Exception as e:
+        await websocket.close()
 
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
