@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Minimize2, Maximize2, X, FileText, Image, Upload } from 'lucide-react';
 import { useWindows } from '../contexts/WindowContext';
+import { ScholarTiles } from './ScholarTiles';
 
 export const ResponseWindow = ({ windowId, content, isMinimized }) => {
   const { minimizeWindow, maximizeWindow, closeWindow } = useWindows();
@@ -79,6 +80,14 @@ export const ResponseWindow = ({ windowId, content, isMinimized }) => {
               {content.response}
             </p>
           </div>
+
+          {/* Scholar Research Results */}
+          {content.scholarData && (
+            <ScholarTiles 
+              scholarData={content.scholarData} 
+              isLoading={false}
+            />
+          )}
 
           {/* Show captured image if it exists */}
           {content.image && (

@@ -4,17 +4,23 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useWindows } from '../contexts/WindowContext';
 import { useAudioRecording } from '../hooks/useAudioRecording';
 import { useCamera } from '../hooks/useCamera';
+import { searchScholar } from '../services/scholarApi';
 
 export const SearchBar = ({ isMinimized, onSearch }) => {
   const [query, setQuery] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
   const fileInputRef = useRef(null);
   const { createWindow, maximizeWindow, minimizeWindow, windows, findWindowByType } = useWindows();
   const { isRecording, startRecording, stopRecording, transcript } = useAudioRecording();
   const { openCamera } = useCamera();
 
-  const handleSearch = () => {
+  const handleSearch = async () => {
     if (query.trim()) {
+      setIsSearching(true);
       onSearch?.(query);
+      
+      // Fetch scholar data
+      const scholarData = await searchScholar(query.trim());
       
       // Check if text response window already exists
       const existingResponseWindow = findWindowByType('response');
@@ -24,7 +30,8 @@ export const SearchBar = ({ isMinimized, onSearch }) => {
         existingResponseWindow.content = { 
           query, 
           response: 'This is a sample response...',
-          type: 'text'
+          type: 'text',
+          scholarData: scholarData
         };
         maximizeWindow(existingResponseWindow.id);
       } else {
@@ -35,10 +42,12 @@ export const SearchBar = ({ isMinimized, onSearch }) => {
           content: { 
             query, 
             response: 'This is a sample response...',
-            type: 'text'
+            type: 'text',
+            scholarData: scholarData
           }
         });
       }
+      setIsSearching(false);
     }
   };
 
