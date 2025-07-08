@@ -27,13 +27,13 @@ class SearchQueryOnSerper(BaseModel):
     q: str
 
 @app.post("/search-scholar")
-def search_scholar(data: SearchQueryOnSerper):
+def search_scholar(data_serper: SearchQueryOnSerper):
     headers = {
         'X-API-KEY': 'c8fa1043c013a0719fb8cdbc8b254c6f18d0c864',
         'Content-Type': 'application/json'
     }
     payload = {
-        "q": data.q
+        "q": data_serper.q
     }
 
     response = requests.post("https://google.serper.dev/scholar", headers=headers, json=payload)
@@ -46,13 +46,13 @@ class SearchQueryOnSerperImage(BaseModel):
 
 # ----------------------- Serper.dev Lens Proxy --------------------
 @app.post("/search-lens")
-def search_lens(data: SearchQueryOnSerperImage):
+def search_lens(data_serper_image: SearchQueryOnSerperImage):
     headers = {
         'X-API-KEY': 'c8fa1043c013a0719fb8cdbc8b254c6f18d0c864',  
         'Content-Type': 'application/json'
     }
 
-    payload = { "url": data.url }
+    payload = { "url": data_serper_image.url }
 
     try:
         response = requests.post("https://google.serper.dev/lens", headers=headers, json=payload)
