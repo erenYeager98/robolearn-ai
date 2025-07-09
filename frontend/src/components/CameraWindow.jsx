@@ -1,8 +1,10 @@
 import React, { useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Minimize2, X, Camera, ArrowRight } from 'lucide-react';
+import { Minimize2, X, Camera, ArrowRight, RotateCcw } from 'lucide-react';
 import { useWindows } from '../contexts/WindowContext';
 import { useCamera } from '../hooks/useCamera';
+import { uploadImage } from '../services/imageUploadApi';
+import { searchByImage } from '../services/imageSearchApi';
 
 export const CameraWindow = ({ windowId, isMinimized }) => {
   const { minimizeWindow, maximizeWindow, closeWindow, createWindow, findWindowByType } = useWindows();
@@ -13,7 +15,8 @@ export const CameraWindow = ({ windowId, isMinimized }) => {
     canvasRef, 
     openCamera, 
     closeCamera, 
-    captureImage 
+    captureImage,
+    resetCamera
   } = useCamera();
 
   useEffect(() => {
@@ -28,6 +31,25 @@ export const CameraWindow = ({ windowId, isMinimized }) => {
 
   const handleSearchImage = () => {
     if (capturedImage) {
+      handleImageSearch();
+    }
+  };
+
+  const handleRetake = () => {
+    resetCamera();
+  };
+  const handleImageSearch = async () => {
+    try {
+      // Convert data URL to blob
+      const response = await fetch(capturedImage);
+      const blob = await response.blob();
+      
+      // Upload image to get public URL
+      const imageUrl = await uploadImage(blob);
+      
+      // Search for similar images
+      const imageSearchData = await searchByImage(imageUrl);
+      
       // Check if image response window already exists
       const existingImageWindow = findWindowByType('image-response');
       
@@ -35,8 +57,10 @@ export const CameraWindow = ({ windowId, isMinimized }) => {
         // Update existing window content and maximize it
         existingImageWindow.content = { 
           query: 'Image search', 
-          response: 'This is a sample response for image search...',
+          response: 'Visual search results for your captured image',
           image: capturedImage,
+          imageUrl: imageUrl,
+          imageSearchData: imageSearchData,
           type: 'image'
         };
         maximizeWindow(existingImageWindow.id);
@@ -47,7 +71,34 @@ export const CameraWindow = ({ windowId, isMinimized }) => {
           type: 'image-response',
           content: { 
             query: 'Image search', 
-            response: 'This is a sample response for image search...',
+            response: 'Visual search results for your captured image',
+            image: capturedImage,
+            imageUrl: imageUrl,
+            imageSearchData: imageSearchData,
+            type: 'image'
+          }
+        });
+      }
+    } catch (error) {
+      console.error('Error processing image search:', error);
+      // Fallback to basic image display
+      const existingImageWindow = findWindowByType('image-response');
+      
+      if (existingImageWindow) {
+        existingImageWindow.content = { 
+          query: 'Image search', 
+          response: 'Error processing image search. Please try again.',
+          image: capturedImage,
+          type: 'image'
+        };
+        maximizeWindow(existingImageWindow.id);
+      } else {
+        createWindow({
+          id: 'image-response',
+          type: 'image-response',
+          content: { 
+            query: 'Image search', 
+            response: 'Error processing image search. Please try again.',
             image: capturedImage,
             type: 'image'
           }
@@ -79,40 +130,40 @@ export const CameraWindow = ({ windowId, isMinimized }) => {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
-      className="w-full max-w-4xl mx-auto bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 shadow-2xl overflow-hidden"
+      className="w-full max-w-6xl mx-auto bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 shadow-2xl overflow-hidden"
     >
-      <div className="flex items-center justify-between p-4 border-b border-white/20">
-        <h3 className="text-white font-medium">Camera</h3>
+      <div className="flex items-center justify-between p-6 border-b border-white/20">
+        <h3 className="text-white font-medium text-lg">Camera</h3>
         <div className="flex items-center space-x-2">
           <button
             onClick={() => minimizeWindow(windowId)}
-            className="p-2 rounded-full bg-white/20 hover:bg-white/30 transition-colors"
+            className="p-3 rounded-full bg-white/20 hover:bg-white/30 transition-colors"
           >
-            <Minimize2 className="w-4 h-4 text-white/70" />
+            <Minimize2 className="w-5 h-5 text-white/70" />
           </button>
           <button
             onClick={() => closeWindow(windowId)}
-            className="p-2 rounded-full bg-white/20 hover:bg-red-500/50 transition-colors"
+            className="p-3 rounded-full bg-white/20 hover:bg-red-500/50 transition-colors"
           >
-            <X className="w-4 h-4 text-white/70" />
+            <X className="w-5 h-5 text-white/70" />
           </button>
         </div>
       </div>
       
-      <div className="p-6 min-h-96">
+      <div className="p-8 min-h-[32rem]">
         <div className="relative bg-black/20 rounded-lg overflow-hidden">
           {capturedImage ? (
             <img 
               src={capturedImage} 
               alt="Captured" 
-              className="w-full h-80 object-cover"
+              className="w-full h-96 object-contain bg-black/40"
             />
           ) : (
             <video
               ref={videoRef}
               autoPlay
               playsInline
-              className="w-full h-80 object-cover"
+              className="w-full h-96 object-contain bg-black/40"
             />
           )}
           
@@ -122,23 +173,29 @@ export const CameraWindow = ({ windowId, isMinimized }) => {
             {!capturedImage ? (
               <button
                 onClick={captureImage}
-                className="p-3 bg-white/20 hover:bg-white/30 rounded-full backdrop-blur-lg transition-colors"
+                className="p-4 bg-white/20 hover:bg-white/30 rounded-full backdrop-blur-lg transition-colors"
               >
-                <Camera className="w-5 h-5 text-white" />
+                <Camera className="w-6 h-6 text-white" />
               </button>
             ) : (
-              <div className="flex flex-col space-y-2">
+              <div className="flex space-x-2">
+                <button
+                  onClick={handleRetake}
+                  className="p-4 bg-orange-500/80 hover:bg-orange-600 rounded-full backdrop-blur-lg transition-colors"
+                >
+                  <RotateCcw className="w-6 h-6 text-white" />
+                </button>
                 <button
                   onClick={captureImage}
-                  className="p-3 bg-white/20 hover:bg-white/30 rounded-full backdrop-blur-lg transition-colors"
+                  className="p-4 bg-white/20 hover:bg-white/30 rounded-full backdrop-blur-lg transition-colors"
                 >
-                  <Camera className="w-5 h-5 text-white" />
+                  <Camera className="w-6 h-6 text-white" />
                 </button>
                 <button
                   onClick={handleSearchImage}
-                  className="p-3 bg-blue-500 hover:bg-blue-600 rounded-full backdrop-blur-lg transition-colors"
+                  className="p-4 bg-blue-500 hover:bg-blue-600 rounded-full backdrop-blur-lg transition-colors"
                 >
-                  <ArrowRight className="w-5 h-5 text-white" />
+                  <ArrowRight className="w-6 h-6 text-white" />
                 </button>
               </div>
             )}
