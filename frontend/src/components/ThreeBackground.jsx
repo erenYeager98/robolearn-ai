@@ -219,24 +219,42 @@ export const ThreeBackground = () => {
 
     // Enhanced scroll handling
     const handleScroll = () => {
-      const scrollY = window.scrollY;
-      const scrollPercent = scrollY / (document.body.scrollHeight - window.innerHeight);
       
-      camera.position.y = scrollY * 0.002;
-      camera.rotation.x = scrollPercent * 0.1;
+
+      const scrollY = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
+      const documentHeight = Math.max(
+        document.body.scrollHeight,
+        document.body.offsetHeight,
+        document.documentElement.clientHeight,
+        document.documentElement.scrollHeight,
+        document.documentElement.offsetHeight
+      );
+      const windowHeight = window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight;
+      const scrollPercent = scrollY / Math.max(documentHeight - windowHeight, 1);
+      
+      if (cameraRef.current) {
+        cameraRef.current.position.y = scrollY * 0.002;
+        cameraRef.current.rotation.x = scrollPercent * 0.1;
+      }
       
       // Rotate entire scene slightly on scroll
-      scene.rotation.y = scrollPercent * 0.2;
+      if (sceneRef.current) {
+        sceneRef.current.rotation.y = scrollPercent * 0.2;
+      }
+      console.log("ScrollY:", scrollY);
+
     };
 
-    window.addEventListener('scroll', handleScroll);
+    // Add scroll listener with passive option for better performance
+    window.addEventListener('scroll', handleScroll, { passive: false });
+
 
     // Handle resize
     const handleResize = () => {
-      if (camera && renderer) {
-        camera.aspect = window.innerWidth / window.innerHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(window.innerWidth, window.innerHeight);
+      if (cameraRef.current && rendererRef.current) {
+        cameraRef.current.aspect = window.innerWidth / window.innerHeight;
+        cameraRef.current.updateProjectionMatrix();
+        rendererRef.current.setSize(window.innerWidth, window.innerHeight);
       }
     };
 
@@ -244,6 +262,8 @@ export const ThreeBackground = () => {
 
     return () => {
       window.removeEventListener('scroll', handleScroll);
+      document.removeEventListener('scroll', handleScroll);
+
       window.removeEventListener('resize', handleResize);
       if (mountRef.current && renderer.domElement) {
         mountRef.current.removeChild(renderer.domElement);

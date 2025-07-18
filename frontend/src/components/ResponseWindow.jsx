@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Minimize2, Maximize2, X, FileText, Image, Upload } from 'lucide-react';
 import { useWindows } from '../contexts/WindowContext';
 import { ScholarTiles } from './ScholarTiles';
+import { ImageSearchTiles } from './ImageSearchTiles';
 
 export const ResponseWindow = ({ windowId, content, isMinimized }) => {
   const { minimizeWindow, maximizeWindow, closeWindow } = useWindows();
@@ -52,33 +53,33 @@ export const ResponseWindow = ({ windowId, content, isMinimized }) => {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
-      className="w-full max-w-4xl mx-auto bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 shadow-2xl overflow-hidden"
+      className="w-full max-w-6xl mx-auto bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 shadow-2xl overflow-hidden"
     >
-      <div className="flex items-center justify-between p-4 border-b border-white/20">
-        <h3 className="text-white font-medium">{getWindowTitle()}</h3>
+      <div className="flex items-center justify-between p-6 border-b border-white/20">
+        <h3 className="text-white font-medium text-lg">{getWindowTitle()}</h3>
         <div className="flex items-center space-x-2">
           <button
             onClick={() => minimizeWindow(windowId)}
-            className="p-2 rounded-full bg-white/20 hover:bg-white/30 transition-colors"
+            className="p-3 rounded-full bg-white/20 hover:bg-white/30 transition-colors"
           >
-            <Minimize2 className="w-4 h-4 text-white/70" />
+            <Minimize2 className="w-5 h-5 text-white/70" />
           </button>
           <button
             onClick={() => closeWindow(windowId)}
-            className="p-2 rounded-full bg-white/20 hover:bg-red-500/50 transition-colors"
+            className="p-3 rounded-full bg-white/20 hover:bg-red-500/50 transition-colors"
           >
-            <X className="w-4 h-4 text-white/70" />
+            <X className="w-5 h-5 text-white/70" />
           </button>
         </div>
       </div>
       
-      <div className="p-6 min-h-96 max-h-96 overflow-y-auto">
+      <div className="p-8 min-h-[32rem] max-h-[40rem] overflow-y-auto response-window-content">
         <div className="space-y-4">
-          <div className="bg-white/10 rounded-lg p-4">
-            <h4 className="text-white font-medium mb-2">Query: {content.query}</h4>
-            <p className="text-white/80 leading-relaxed">
+          <div className="bg-white/10 rounded-lg p-6">
+            <h4 className="text-white font-medium mb-3 text-lg">Query: {content.query}</h4>
+            <div className="text-white/80 leading-relaxed text-base whitespace-pre-wrap">
               {content.response}
-            </p>
+            </div>
           </div>
 
           {/* Scholar Research Results */}
@@ -89,32 +90,40 @@ export const ResponseWindow = ({ windowId, content, isMinimized }) => {
             />
           )}
 
+          {/* Image Search Results */}
+          {content.imageSearchData && (
+            <ImageSearchTiles 
+              imageSearchData={content.imageSearchData} 
+              isLoading={false}
+            />
+          )}
+
           {/* Show captured image if it exists */}
           {content.image && (
-            <div className="bg-white/10 rounded-lg p-4">
-              <h4 className="text-white font-medium mb-2">Captured Image</h4>
+            <div className="bg-white/10 rounded-lg p-6">
+              <h4 className="text-white font-medium mb-3 text-lg">Captured Image</h4>
               <img 
                 src={content.image} 
                 alt="Captured" 
-                className="w-full max-w-md rounded-lg"
+                className="w-full max-w-lg rounded-lg"
               />
             </div>
           )}
 
           {/* Show file info if it's an upload */}
           {content.file && (
-            <div className="bg-white/10 rounded-lg p-4">
-              <h4 className="text-white font-medium mb-2">File Information</h4>
+            <div className="bg-white/10 rounded-lg p-6">
+              <h4 className="text-white font-medium mb-3 text-lg">File Information</h4>
               <div className="space-y-2">
-                <div className="flex items-center justify-between text-sm">
+                <div className="flex items-center justify-between text-base">
                   <span className="text-white/60">File Name</span>
                   <span className="text-white/80">{content.file.name}</span>
                 </div>
-                <div className="flex items-center justify-between text-sm">
+                <div className="flex items-center justify-between text-base">
                   <span className="text-white/60">File Size</span>
                   <span className="text-white/80">{(content.file.size / 1024).toFixed(2)} KB</span>
                 </div>
-                <div className="flex items-center justify-between text-sm">
+                <div className="flex items-center justify-between text-base">
                   <span className="text-white/60">File Type</span>
                   <span className="text-white/80">{content.file.type || 'Unknown'}</span>
                 </div>
@@ -122,18 +131,18 @@ export const ResponseWindow = ({ windowId, content, isMinimized }) => {
             </div>
           )}
           
-          <div className="bg-white/10 rounded-lg p-4">
-            <h4 className="text-white font-medium mb-2">Additional Information</h4>
+          <div className="bg-white/10 rounded-lg p-6">
+            <h4 className="text-white font-medium mb-3 text-lg">Additional Information</h4>
             <div className="space-y-2">
-              <div className="flex items-center justify-between text-sm">
+              <div className="flex items-center justify-between text-base">
                 <span className="text-white/60">Response Time</span>
                 <span className="text-white/80">0.34s</span>
               </div>
-              <div className="flex items-center justify-between text-sm">
+              <div className="flex items-center justify-between text-base">
                 <span className="text-white/60">Sources</span>
                 <span className="text-white/80">3 found</span>
               </div>
-              <div className="flex items-center justify-between text-sm">
+              <div className="flex items-center justify-between text-base">
                 <span className="text-white/60">Type</span>
                 <span className="text-white/80 capitalize">{content?.type || 'text'}</span>
               </div>
