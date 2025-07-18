@@ -50,12 +50,23 @@ export const useCamera = () => {
     }
   }, []);
 
+  const resetCamera = useCallback(() => {
+    setState(prev => ({ ...prev, capturedImage: undefined }));
+    // Restart the camera stream if it was stopped
+    if (streamRef.current && videoRef.current) {
+      videoRef.current.srcObject = streamRef.current;
+    } else {
+      // If no stream exists, open camera again
+      openCamera();
+    }
+  }, []);
   return {
     ...state,
     videoRef,
     canvasRef,
     openCamera,
     closeCamera,
-    captureImage
+    captureImage,
+    resetCamera
   };
 };
