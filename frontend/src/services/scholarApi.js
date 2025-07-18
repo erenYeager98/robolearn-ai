@@ -1,4 +1,4 @@
-const SCHOLAR_API_URL = 'http://localhost:8000/search-scholar';
+const SCHOLAR_API_URL = 'http://16.171.150.90:8000/search-scholar';
 const VITE_SERPER_API_KEY = "c8fa1043c013a0719fb8cdbc8b254c6f18d0c864";
 export const searchScholar = async (query) => {
   try {
