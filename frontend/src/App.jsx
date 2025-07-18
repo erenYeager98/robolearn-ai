@@ -9,6 +9,7 @@ function App() {
       <div className="relative overflow-x-hidden">
         <ThreeBackground />
         <WindowManager />
+        
       </div>
     </WindowProvider>
   );
