@@ -71,7 +71,7 @@ export const WindowManager = () => {
       </div>
 
       {/* Main content area */}
-      <div className="pt-24 px-4 pb-8">
+      <div className="pt-28 px-6 pb-12">
         <div className="flex items-center justify-center min-h-screen">
           <AnimatePresence mode="wait">
             {isSearchCentered ? (
@@ -80,7 +80,7 @@ export const WindowManager = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
-                className="w-full max-w-2xl"
+                className="w-full max-w-4xl"
               >
                 <SearchBar 
                   isMinimized={false}
@@ -114,6 +114,7 @@ export const WindowManager = () => {
 
       {/* Scroll content for demonstration */}
       <div className="h-screen bg-transparent" />
+      
     </div>
   );
 };
