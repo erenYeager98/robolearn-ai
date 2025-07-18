@@ -1,63 +1,84 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback } from "react";
 
-export const useAudioRecording = () => {
-  const [state, setState] = useState({
-    isRecording: false
-  });
-  
+export const useAudioRecording = (onTranscript) => {
+  const [isRecording, setIsRecording] = useState(false);
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
+  const websocketRef = useRef(null);
 
   const startRecording = useCallback(async () => {
     try {
+      console.log("[🎤] Requesting microphone access...");
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream);
-      
-      mediaRecorderRef.current = mediaRecorder;
+
+      console.log("[🎙️] Microphone access granted. Starting recording...");
+      const mediaRecorder = new MediaRecorder(stream, { mimeType: "audio/webm" });
+
       audioChunksRef.current = [];
 
       mediaRecorder.ondataavailable = (event) => {
-        audioChunksRef.current.push(event.data);
+        console.log("[📦] Received audio chunk:", event.data.size, "bytes");
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
       };
 
       mediaRecorder.onstop = async () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
-        setState(prev => ({ ...prev, audioBlob, isRecording: false }));
-        
-        // Send to websocket endpoint (implement your existing method here)
-        await sendAudioToWebSocket(audioBlob);
-        
-        // Clean up
-        stream.getTracks().forEach(track => track.stop());
+        console.log("[🛑] Recording stopped. Preparing to send audio...");
+        const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+        const arrayBuffer = await audioBlob.arrayBuffer();
+
+        console.log("[📡] Opening WebSocket...");
+        websocketRef.current = new WebSocket("ws://10.110.87.206:8000/ws/audio");
+
+        websocketRef.current.onopen = () => {
+          console.log("[✅] WebSocket connected. Sending audio...");
+          websocketRef.current.send(arrayBuffer);
+        };
+
+        websocketRef.current.onmessage = (event) => {
+          console.log("[📥] Message received from server:", event.data);
+          try {
+            const { text, error } = JSON.parse(event.data);
+            if (error) {
+              console.error("[❌] Transcription error:", error);
+            } else if (onTranscript) {
+              console.log("[📝] Transcription received:", text);
+              onTranscript(text); // <- CALLS YOUR `setText(...)` FROM SearchBar.jsx or App.jsx
+            }
+          } catch (err) {
+            console.error("[⚠️] JSON parsing error:", err);
+          }
+
+          websocketRef.current.close();
+        };
+
+        websocketRef.current.onerror = (err) => {
+          console.error("[⚡] WebSocket error:", err);
+        };
       };
 
+      mediaRecorderRef.current = mediaRecorder;
       mediaRecorder.start();
-      setState(prev => ({ ...prev, isRecording: true }));
-    } catch (error) {
-      console.error('Error starting recording:', error);
+      setIsRecording(true);
+      console.log("[🔴] Recording started...");
+    } catch (err) {
+      console.error("[🚫] Error accessing microphone:", err);
+    }
+  }, [onTranscript]);
+
+  const stopRecording = useCallback(() => {
+    console.log("[🖐️] Stopping recording...");
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
     }
   }, []);
 
-  const stopRecording = useCallback(() => {
-    if (mediaRecorderRef.current && state.isRecording) {
-      mediaRecorderRef.current.stop();
-    }
-  }, [state.isRecording]);
-
-  const sendAudioToWebSocket = async (audioBlob) => {
-    // Implement your existing WebSocket audio sending logic here
-    // This is a placeholder for the actual implementation
-    console.log('Sending audio to WebSocket:', audioBlob);
-    
-    // Simulate API response
-    setTimeout(() => {
-      setState(prev => ({ ...prev, transcript: 'Sample transcribed text' }));
-    }, 1000);
-  };
-
   return {
-    ...state,
+    
+    isRecording,
     startRecording,
-    stopRecording
+    stopRecording,
   };
 };
