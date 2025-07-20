@@ -1,38 +1,20 @@
-from fastapi import FastAPI, WebSocket
-from fastapi.middleware.cors import CORSMiddleware
-import torch
-import whisper
-import io
-import base64
-import numpy as np
-import wave
+from fastapi import FastAPI, Request
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
+import os
 
 app = FastAPI()
 
-# CORS setup
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# Path to the frontend's build directory
+frontend_dist = os.path.abspath(os.path.join(os.path.dirname(__file__), "../frontend/dist"))
 
-model = whisper.load_model("tiny")
+# Mount static files (JS, CSS, etc.)
+app.mount("/assets", StaticFiles(directory=os.path.join(frontend_dist, "assets")), name="assets")
 
-@app.websocket("/ws/audio")
-async def websocket_endpoint(websocket: WebSocket):
-    await websocket.accept()
-    audio_buffer = bytearray()
-    try:
-        while True:
-            data = await websocket.receive_bytes()
-            audio_buffer.extend(data)
-            if len(audio_buffer) > 16000 * 5:  # 5 seconds of audio
-                audio_np = np.frombuffer(audio_buffer, np.int16).astype(np.float32) / 32768.0
-                audio_buffer.clear()
-                result = model.transcribe(audio_np, language='en', fp16=False)
-                await websocket.send_json({"text": result['text']})
-    except Exception as e:
-        await websocket.close()
-
+# Serve index.html for all other routes
+@app.get("/{path_name:path}")
+async def serve_spa(path_name: str, request: Request):
+    index_path = os.path.join(frontend_dist, "index.html")
+    if os.path.exists(index_path):
+        return FileResponse(index_path)
+    return {"detail": "index.html not found"}
