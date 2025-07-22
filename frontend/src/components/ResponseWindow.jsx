@@ -5,6 +5,10 @@ import { useWindows } from '../contexts/WindowContext';
 import { useTextToSpeech } from '../hooks/useTextToSpeech';
 import { ScholarTiles } from './ScholarTiles';
 import { ImageSearchTiles } from './ImageSearchTiles';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
+import 'katex/dist/katex.min.css';
+import ReactMarkdown from 'react-markdown';
 
 export const ResponseWindow = ({ windowId, content, isMinimized }) => {
   const { minimizeWindow, maximizeWindow, closeWindow } = useWindows();
@@ -182,9 +186,13 @@ export const ResponseWindow = ({ windowId, content, isMinimized }) => {
                   </div>
                 </>
               )}
-              <h4 className="text-white font-medium mb-3 text-lg">Query: {content.query}</h4>
               <div className="text-white/80 leading-relaxed text-base whitespace-pre-wrap relative z-10">
-                {content.response}
+                <ReactMarkdown
+                  children={content.response}
+                  remarkPlugins={[remarkMath]}
+                  rehypePlugins={[rehypeKatex]}
+                />
+
               </div>
             </div>
 
