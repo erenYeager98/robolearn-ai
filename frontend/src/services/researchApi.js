@@ -1,4 +1,4 @@
-const RESEARCH_API_URL = 'http://10.110.87.206:5000/research'; // Adjust this to your actual endpoint URL
+const RESEARCH_API_URL = 'http://localhost:8000/research'; // Adjust this to your actual endpoint URL
 
 export const searchResearch = async (question) => {
   try {
