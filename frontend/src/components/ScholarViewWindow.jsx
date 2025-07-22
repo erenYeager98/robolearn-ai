@@ -6,13 +6,15 @@ import { useWindows } from '../contexts/WindowContext';
 export const ScholarViewWindow = ({ windowId, content, isMinimized }) => {
   const { minimizeWindow, maximizeWindow, closeWindow } = useWindows();
 
+
   const getWindowIcon = () => {
     return content?.type === 'pdf' ? 
       <FileText className="w-4 h-4 text-white/60" /> : 
       <ExternalLink className="w-4 h-4 text-white/60" />;
   };
 
-  const getWindowTitle = () => {
+  const getWindowTitle = (
+  ) => {
     return content?.type === 'pdf' ? 'PDF Viewer' : 'Web Viewer';
   };
 
