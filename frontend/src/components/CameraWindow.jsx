@@ -8,6 +8,7 @@ import { searchByImage } from '../services/imageSearchApi';
 
 export const CameraWindow = ({ windowId, isMinimized }) => {
   const { minimizeWindow, maximizeWindow, closeWindow, createWindow, findWindowByType } = useWindows();
+  const { updateWindowContent } = useWindows();
   const { 
     isOpen, 
     capturedImage, 
@@ -39,6 +40,34 @@ export const CameraWindow = ({ windowId, isMinimized }) => {
     resetCamera();
   };
   const handleImageSearch = async () => {
+    // Check if image response window already exists
+    const existingImageWindow = findWindowByType('image-response');
+    
+    if (existingImageWindow) {
+      // Update existing window content and maximize it
+      updateWindowContent(existingImageWindow.id, { 
+        query: 'Image search', 
+        response: '',
+        image: capturedImage,
+        type: 'image',
+        isLoading: true
+      });
+      maximizeWindow(existingImageWindow.id);
+    } else {
+      // Create new image response window
+      createWindow({
+        id: 'image-response',
+        type: 'image-response',
+        content: {
+          query: 'Image search', 
+          response: '',
+          image: capturedImage,
+          type: 'image',
+          isLoading: true
+        }
+      });
+    }
+
     try {
       // Convert data URL to blob
       const response = await fetch(capturedImage);
@@ -50,60 +79,27 @@ export const CameraWindow = ({ windowId, isMinimized }) => {
       // Search for similar images
       const imageSearchData = await searchByImage(imageUrl);
       
-      // Check if image response window already exists
-      const existingImageWindow = findWindowByType('image-response');
-      
-      if (existingImageWindow) {
-        // Update existing window content and maximize it
-        existingImageWindow.content = { 
-          query: 'Image search', 
-          response: 'Visual search results for your captured image',
-          image: capturedImage,
-          imageUrl: imageUrl,
-          imageSearchData: imageSearchData,
-          type: 'image'
-        };
-        maximizeWindow(existingImageWindow.id);
-      } else {
-        // Create new image response window
-        createWindow({
-          id: 'image-response',
-          type: 'image-response',
-          content: { 
-            query: 'Image search', 
-            response: 'Visual search results for your captured image',
-            image: capturedImage,
-            imageUrl: imageUrl,
-            imageSearchData: imageSearchData,
-            type: 'image'
-          }
-        });
-      }
+      // Update with actual data after processing
+      updateWindowContent('image-response', {
+        query: 'Image search',
+        response: 'Visual search results for your captured image',
+        image: capturedImage,
+        imageUrl: imageUrl,
+        imageSearchData: imageSearchData,
+        type: 'image',
+        isLoading: false
+      });
     } catch (error) {
       console.error('Error processing image search:', error);
-      // Fallback to basic image display
-      const existingImageWindow = findWindowByType('image-response');
       
-      if (existingImageWindow) {
-        existingImageWindow.content = { 
-          query: 'Image search', 
-          response: 'Error processing image search. Please try again.',
-          image: capturedImage,
-          type: 'image'
-        };
-        maximizeWindow(existingImageWindow.id);
-      } else {
-        createWindow({
-          id: 'image-response',
-          type: 'image-response',
-          content: { 
-            query: 'Image search', 
-            response: 'Error processing image search. Please try again.',
-            image: capturedImage,
-            type: 'image'
-          }
-        });
-      }
+      // Update with error message
+      updateWindowContent('image-response', {
+        query: 'Image search',
+        response: 'Error processing image search. Please try again.',
+        image: capturedImage,
+        type: 'image',
+        isLoading: false
+      });
     }
   };
 

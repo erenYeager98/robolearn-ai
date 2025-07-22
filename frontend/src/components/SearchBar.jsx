@@ -11,9 +11,8 @@ export const SearchBar = ({ isMinimized, onSearch }) => {
   const [query, setQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const fileInputRef = useRef(null);
-  const { createWindow, maximizeWindow, minimizeWindow, windows, findWindowByType } = useWindows();
-  const { isRecording, startRecording, stopRecording, transcript } = useAudioRecording((transcript) => {
-    setQuery(transcript);});
+  const { createWindow, maximizeWindow, minimizeWindow, windows, findWindowByType, updateWindowContent } = useWindows();
+  const { isRecording, startRecording, stopRecording, transcript } = useAudioRecording();
   const { openCamera } = useCamera();
 
   const handleSearch = async () => {
@@ -21,68 +20,104 @@ export const SearchBar = ({ isMinimized, onSearch }) => {
       setIsSearching(true);
       onSearch?.(query);
       
+      // Check if text response window already exists
+      const existingResponseWindow = findWindowByType('response');
+      
+      if (existingResponseWindow) {
+        // Update existing window content and maximize it
+        existingResponseWindow.content = {
+          query, 
+          response: '',
+          type: 'text',
+          isLoading: true
+        };
+        maximizeWindow(existingResponseWindow.id);
+      } else {
+        // Create new response window
+        createWindow({
+          id: 'text-response',
+          type: 'response',
+          content: {
+            query, 
+            response: '',
+            type: 'text',
+            isLoading: true
+          }
+        });
+      }
+
       try {
-        // Fetch research data from your model
+        // Fetch research data from your model (main content)
         const researchData = await searchResearch(query.trim());
         
-        // Fetch scholar data
-        const scholarData = await searchScholar(query.trim());
-        
-        // Check if text response window already exists
-        const existingResponseWindow = findWindowByType('response');
-        
-        if (existingResponseWindow) {
-          // Update existing window content and maximize it
-          existingResponseWindow.content = { 
-            query, 
+        // Update with main research data immediately
+        updateWindowContent('text-response', {
+          query,
+          response: researchData.response || researchData.answer || 'No response received from model',
+          type: 'text',
+          researchData: researchData,
+          isLoading: false,
+          scholarLoading: true // Keep scholar section loading
+        });
+
+        // Fetch scholar data in background (non-blocking)
+        searchScholar(query.trim()).then(scholarData => {
+          // Update with scholar data when it arrives
+          updateWindowContent('text-response', {
+            query,
             response: researchData.response || researchData.answer || 'No response received from model',
             type: 'text',
+            researchData: researchData,
             scholarData: scholarData,
-            researchData: researchData
-          };
-          maximizeWindow(existingResponseWindow.id);
-        } else {
-          // Create new response window
-          createWindow({
-            id: 'text-response',
-            type: 'response',
-            content: { 
-              query, 
-              response: researchData.response || researchData.answer || 'No response received from model',
-              type: 'text',
-              scholarData: scholarData,
-              researchData: researchData
-            }
+            isLoading: false,
+            scholarLoading: false
           });
-        }
+        }).catch(scholarError => {
+          console.error('Error fetching scholar data:', scholarError);
+          // Update to show that scholar data failed but keep main content
+          updateWindowContent('text-response', {
+            query,
+            response: researchData.response || researchData.answer || 'No response received from model',
+            type: 'text',
+            researchData: researchData,
+            isLoading: false,
+            scholarLoading: false,
+            scholarError: 'Failed to load academic results'
+          });
+        });
+
       } catch (error) {
         console.error('Error during search:', error);
         
         // Fallback to scholar data only if research API fails
-        const scholarData = await searchScholar(query.trim());
-        
-        const existingResponseWindow = findWindowByType('response');
-        
-        if (existingResponseWindow) {
-          existingResponseWindow.content = { 
+        updateWindowContent('text-response', {
+          query, 
+          response: 'Error connecting to research model. Showing academic results only.',
+          type: 'text',
+          isLoading: false,
+          scholarLoading: true
+        });
+
+        // Still try to fetch scholar data in background
+        searchScholar(query.trim()).then(scholarData => {
+          updateWindowContent('text-response', {
             query, 
             response: 'Error connecting to research model. Showing academic results only.',
             type: 'text',
-            scholarData: scholarData
-          };
-          maximizeWindow(existingResponseWindow.id);
-        } else {
-          createWindow({
-            id: 'text-response',
-            type: 'response',
-            content: { 
-              query, 
-              response: 'Error connecting to research model. Showing academic results only.',
-              type: 'text',
-              scholarData: scholarData
-            }
+            scholarData: scholarData,
+            isLoading: false,
+            scholarLoading: false
           });
-        }
+        }).catch(() => {
+          updateWindowContent('text-response', {
+            query, 
+            response: 'Error connecting to research model and academic sources.',
+            type: 'text',
+            isLoading: false,
+            scholarLoading: false,
+            scholarError: 'Failed to load academic results'
+          });
+        });
       }
       
       setIsSearching(false);
@@ -126,12 +161,12 @@ export const SearchBar = ({ isMinimized, onSearch }) => {
       
       if (existingUploadWindow) {
         // Update existing window content and maximize it
-        existingUploadWindow.content = { 
+        updateWindowContent(existingUploadWindow.id, { 
           query: `File upload: ${file.name}`, 
           response: `Processing uploaded file: ${file.name} (${(file.size / 1024).toFixed(2)} KB)`,
           type: 'upload',
           file: file
-        };
+        });
         maximizeWindow(existingUploadWindow.id);
       } else {
         // Create new upload response window

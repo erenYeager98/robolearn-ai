@@ -4,6 +4,7 @@ import { useWindows } from '../contexts/WindowContext';
 import { SearchBar } from './SearchBar';
 import { ResponseWindow } from './ResponseWindow';
 import { CameraWindow } from './CameraWindow';
+import { ScholarViewWindow } from './ScholarViewWindow';
 
 export const WindowManager = () => {
   const { windows, activeWindow } = useWindows();
@@ -63,6 +64,13 @@ export const WindowManager = () => {
                       isMinimized={true}
                     />
                   )}
+                  {(window.type === 'scholar-web' || window.type === 'scholar-pdf') && (
+                    <ScholarViewWindow 
+                      windowId={window.id}
+                      content={window.content}
+                      isMinimized={true}
+                    />
+                  )}
                 </motion.div>
               ))}
             </AnimatePresence>
@@ -106,6 +114,12 @@ export const WindowManager = () => {
                     windowId={maximizedWindow.id}
                   />
                 )}
+                {(maximizedWindow.type === 'scholar-web' || maximizedWindow.type === 'scholar-pdf') && (
+                  <ScholarViewWindow 
+                    windowId={maximizedWindow.id}
+                    content={maximizedWindow.content}
+                  />
+                )}
               </motion.div>
             ) : null}
           </AnimatePresence>
@@ -114,7 +128,6 @@ export const WindowManager = () => {
 
       {/* Scroll content for demonstration */}
       <div className="h-screen bg-transparent" />
-      
     </div>
   );
 };

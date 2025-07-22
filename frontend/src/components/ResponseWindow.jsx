@@ -1,12 +1,14 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Minimize2, Maximize2, X, FileText, Image, Upload } from 'lucide-react';
+import { Minimize2, Maximize2, X, FileText, Image, Upload, Volume2, VolumeX } from 'lucide-react';
 import { useWindows } from '../contexts/WindowContext';
+import { useTextToSpeech } from '../hooks/useTextToSpeech';
 import { ScholarTiles } from './ScholarTiles';
 import { ImageSearchTiles } from './ImageSearchTiles';
 
 export const ResponseWindow = ({ windowId, content, isMinimized }) => {
   const { minimizeWindow, maximizeWindow, closeWindow } = useWindows();
+  const { playingId, isPlaying, isLoading: ttsLoading, playAudio, stopAudio } = useTextToSpeech();
 
   const getWindowIcon = () => {
     switch (content?.type) {
@@ -27,6 +29,16 @@ export const ResponseWindow = ({ windowId, content, isMinimized }) => {
         return 'File Upload';
       default:
         return 'Search Results';
+    }
+  };
+
+  const handleReadAloud = async () => {
+    if (playingId === windowId && isPlaying) {
+      stopAudio();
+    } else {
+      // Use the main response content for read aloud
+      const textToRead = content?.response || 'No content available to read';
+      await playAudio(windowId, textToRead);
     }
   };
 
@@ -56,7 +68,27 @@ export const ResponseWindow = ({ windowId, content, isMinimized }) => {
       className="w-full max-w-6xl mx-auto bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 shadow-2xl overflow-hidden"
     >
       <div className="flex items-center justify-between p-6 border-b border-white/20">
-        <h3 className="text-white font-medium text-lg">{getWindowTitle()}</h3>
+        <div className="flex items-center space-x-4">
+          <h3 className="text-white font-medium text-lg">{getWindowTitle()}</h3>
+          {!content?.isLoading && content?.response && (
+            <button
+              onClick={handleReadAloud}
+              className={`p-2 rounded-full transition-all duration-200 ${
+                playingId === windowId && isPlaying
+                  ? 'bg-blue-500/80 hover:bg-blue-600/80 text-white shadow-lg shadow-blue-500/25'
+                  : 'bg-white/20 hover:bg-white/30 text-white/70 hover:text-white'
+              } ${ttsLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+              title={playingId === windowId && isPlaying ? 'Stop reading' : 'Read aloud'}
+              disabled={ttsLoading}
+            >
+              {playingId === windowId && isPlaying ? (
+                <VolumeX className="w-4 h-4" />
+              ) : (
+                <Volume2 className="w-4 h-4" />
+              )}
+            </button>
+          )}
+        </div>
         <div className="flex items-center space-x-2">
           <button
             onClick={() => minimizeWindow(windowId)}
@@ -74,81 +106,167 @@ export const ResponseWindow = ({ windowId, content, isMinimized }) => {
       </div>
       
       <div className="p-8 min-h-[32rem] max-h-[40rem] overflow-y-auto response-window-content">
-        <div className="space-y-4">
-          <div className="bg-white/10 rounded-lg p-6">
-            <h4 className="text-white font-medium mb-3 text-lg">Query: {content.query}</h4>
-            <div className="text-white/80 leading-relaxed text-base whitespace-pre-wrap">
-              {content.response}
+        {content.isLoading ? (
+          <div className="space-y-4">
+            {/* Main response skeleton */}
+            <div className="bg-white/10 rounded-lg p-6 animate-pulse">
+              <div className="h-6 bg-white/20 rounded mb-3 w-1/3"></div>
+              <div className="space-y-3">
+                <div className="h-4 bg-white/15 rounded w-full"></div>
+                <div className="h-4 bg-white/15 rounded w-5/6"></div>
+                <div className="h-4 bg-white/15 rounded w-4/5"></div>
+                <div className="h-4 bg-white/15 rounded w-3/4"></div>
+                <div className="h-4 bg-white/15 rounded w-5/6"></div>
+                <div className="h-4 bg-white/15 rounded w-2/3"></div>
+              </div>
+            </div>
+
+            {/* Scholar results skeleton */}
+            <ScholarTiles 
+              scholarData={null} 
+              isLoading={true}
+            />
+
+            {/* Image search skeleton if it's an image search */}
+            {content?.type === 'image' && (
+              <ImageSearchTiles 
+                imageSearchData={null} 
+                isLoading={true}
+              />
+            )}
+
+            {/* Additional info skeleton */}
+            <div className="bg-white/10 rounded-lg p-6 animate-pulse">
+              <div className="h-6 bg-white/20 rounded mb-3 w-1/2"></div>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="h-4 bg-white/15 rounded w-1/3"></div>
+                  <div className="h-4 bg-white/15 rounded w-1/4"></div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="h-4 bg-white/15 rounded w-1/4"></div>
+                  <div className="h-4 bg-white/15 rounded w-1/5"></div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="h-4 bg-white/15 rounded w-1/6"></div>
+                  <div className="h-4 bg-white/15 rounded w-1/4"></div>
+                </div>
+              </div>
             </div>
           </div>
-
-          {/* Scholar Research Results */}
-          {content.scholarData && (
-            <ScholarTiles 
-              scholarData={content.scholarData} 
-              isLoading={false}
-            />
-          )}
-
-          {/* Image Search Results */}
-          {content.imageSearchData && (
-            <ImageSearchTiles 
-              imageSearchData={content.imageSearchData} 
-              isLoading={false}
-            />
-          )}
-
-          {/* Show captured image if it exists */}
-          {content.image && (
-            <div className="bg-white/10 rounded-lg p-6">
-              <h4 className="text-white font-medium mb-3 text-lg">Captured Image</h4>
-              <img 
-                src={content.image} 
-                alt="Captured" 
-                className="w-full max-w-lg rounded-lg"
-              />
+        ) : (
+          <div className="space-y-4">
+            <div className={`bg-white/10 rounded-lg p-6 relative ${
+              playingId === windowId && isPlaying ? 'ring-2 ring-blue-400/50' : ''
+            }`}>
+              {/* Audio playing effect */}
+              {playingId === windowId && isPlaying && (
+                <>
+                  {/* Animated gradient overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-blue-500/10 animate-pulse pointer-events-none rounded-lg" />
+                  
+                  {/* Floating particles effect */}
+                  <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-lg">
+                    {[...Array(8)].map((_, i) => (
+                      <div
+                        key={i}
+                        className="absolute w-1 h-1 bg-blue-400/60 rounded-full animate-bounce"
+                        style={{
+                          left: `${15 + i * 10}%`,
+                          top: `${20 + (i % 4) * 20}%`,
+                          animationDelay: `${i * 0.2}s`,
+                          animationDuration: '2s'
+                        }}
+                      />
+                    ))}
+                  </div>
+                </>
+              )}
+              <h4 className="text-white font-medium mb-3 text-lg">Query: {content.query}</h4>
+              <div className="text-white/80 leading-relaxed text-base whitespace-pre-wrap relative z-10">
+                {content.response}
+              </div>
             </div>
-          )}
 
-          {/* Show file info if it's an upload */}
-          {content.file && (
+            {/* Scholar Research Results */}
+            {(content.scholarData || content.scholarLoading) && (
+              <ScholarTiles 
+                scholarData={content.scholarData} 
+                isLoading={content.scholarLoading || false}
+              />
+            )}
+
+            {/* Show scholar error if it failed */}
+            {content.scholarError && !content.scholarLoading && (
+              <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4">
+                <h4 className="text-red-300 font-medium mb-2 flex items-center">
+                  <FileText className="w-5 h-5 mr-2" />
+                  Academic Research Error
+                </h4>
+                <p className="text-red-200/80">{content.scholarError}</p>
+              </div>
+            )}
+
+            {/* Image Search Results */}
+            {content.imageSearchData && (
+              <ImageSearchTiles 
+                imageSearchData={content.imageSearchData} 
+                isLoading={false}
+              />
+            )}
+
+            {/* Show captured image if it exists */}
+            {content.image && (
+              <div className="bg-white/10 rounded-lg p-6">
+                <h4 className="text-white font-medium mb-3 text-lg">Captured Image</h4>
+                <img 
+                  src={content.image} 
+                  alt="Captured" 
+                  className="w-full max-w-lg rounded-lg"
+                />
+              </div>
+            )}
+
+            {/* Show file info if it's an upload */}
+            {content.file && (
+              <div className="bg-white/10 rounded-lg p-6">
+                <h4 className="text-white font-medium mb-3 text-lg">File Information</h4>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-base">
+                    <span className="text-white/60">File Name</span>
+                    <span className="text-white/80">{content.file.name}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-base">
+                    <span className="text-white/60">File Size</span>
+                    <span className="text-white/80">{(content.file.size / 1024).toFixed(2)} KB</span>
+                  </div>
+                  <div className="flex items-center justify-between text-base">
+                    <span className="text-white/60">File Type</span>
+                    <span className="text-white/80">{content.file.type || 'Unknown'}</span>
+                  </div>
+                </div>
+              </div>
+            )}
+            
             <div className="bg-white/10 rounded-lg p-6">
-              <h4 className="text-white font-medium mb-3 text-lg">File Information</h4>
+              <h4 className="text-white font-medium mb-3 text-lg">Additional Information</h4>
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-base">
-                  <span className="text-white/60">File Name</span>
-                  <span className="text-white/80">{content.file.name}</span>
+                  <span className="text-white/60">Response Time</span>
+                  <span className="text-white/80">0.34s</span>
                 </div>
                 <div className="flex items-center justify-between text-base">
-                  <span className="text-white/60">File Size</span>
-                  <span className="text-white/80">{(content.file.size / 1024).toFixed(2)} KB</span>
+                  <span className="text-white/60">Sources</span>
+                  <span className="text-white/80">3 found</span>
                 </div>
                 <div className="flex items-center justify-between text-base">
-                  <span className="text-white/60">File Type</span>
-                  <span className="text-white/80">{content.file.type || 'Unknown'}</span>
+                  <span className="text-white/60">Type</span>
+                  <span className="text-white/80 capitalize">{content?.type || 'text'}</span>
                 </div>
-              </div>
-            </div>
-          )}
-          
-          <div className="bg-white/10 rounded-lg p-6">
-            <h4 className="text-white font-medium mb-3 text-lg">Additional Information</h4>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-base">
-                <span className="text-white/60">Response Time</span>
-                <span className="text-white/80">0.34s</span>
-              </div>
-              <div className="flex items-center justify-between text-base">
-                <span className="text-white/60">Sources</span>
-                <span className="text-white/80">3 found</span>
-              </div>
-              <div className="flex items-center justify-between text-base">
-                <span className="text-white/60">Type</span>
-                <span className="text-white/80 capitalize">{content?.type || 'text'}</span>
               </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
     </motion.div>
   );
