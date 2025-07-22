@@ -241,7 +241,6 @@ export const ThreeBackground = () => {
       if (sceneRef.current) {
         sceneRef.current.rotation.y = scrollPercent * 0.2;
       }
-      console.log("ScrollY:", scrollY);
 
     };
 
