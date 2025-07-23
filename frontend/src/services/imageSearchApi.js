@@ -1,4 +1,4 @@
-const IMAGE_SEARCH_API_URL = 'http://16.171.150.90:8000/search-lens'; 
+const IMAGE_SEARCH_API_URL = 'https://erenyeager-dk.live/api/search-lens'; 
 
 export const searchByImage = async (imageUrl) => {
   try {

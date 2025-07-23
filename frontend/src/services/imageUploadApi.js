@@ -1,5 +1,5 @@
 // Mock image upload service - replace with your actual upload endpoint
-const IMAGE_UPLOAD_API_URL = 'http://16.171.150.90:8000/upload-image';
+const IMAGE_UPLOAD_API_URL = 'https://erenyeager-dk.live/api/upload-image';
 
 export const uploadImage = async (imageBlob) => {
   try {

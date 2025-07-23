@@ -1,4 +1,4 @@
-const RESEARCH_API_URL = 'http://localhost:8000/research'; // Adjust this to your actual endpoint URL
+const RESEARCH_API_URL = 'https://erenyeager-dk.live/api/research'; // Adjust this to your actual endpoint URL
 
 export const searchResearch = async (question) => {
   try {
