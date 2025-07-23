@@ -49,7 +49,7 @@ RESEARCH_INSTRUCTION = (
     "Your tone should be helpful, supportive, and curious.\n\n"
 )
 
-@app.post("/research")
+@app.post("/api/research")
 async def ask_question(query: Query):
     prompt = (
         f"<|start_header_id|>system<|end_header_id|>\n{RESEARCH_INSTRUCTION}<|eot_id|>\n"
@@ -83,7 +83,7 @@ async def ask_question(query: Query):
     print(f"Answer: {answer}")
     return {"answer": answer}
 
-@app.post("/summarize")
+@app.post("/api/summarize")
 async def summarize_text(request: SummarizeRequest):
     INSTRUCTION = (
         "You are an expert academic assistant.\n"
