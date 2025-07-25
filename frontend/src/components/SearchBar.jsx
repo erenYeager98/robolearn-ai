@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useWindows } from '../contexts/WindowContext';
 import { useAudioRecording } from '../hooks/useAudioRecording';
 import { useCamera } from '../hooks/useCamera';
+import { useEmotionDetection } from '../hooks/useEmotionDetection';
 import { searchScholar } from '../services/scholarApi';
 import { searchResearch } from '../services/researchApi';
 
@@ -11,9 +12,56 @@ export const SearchBar = ({ isMinimized, onSearch }) => {
   const [query, setQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const fileInputRef = useRef(null);
+  
+  // Existing hooks
   const { createWindow, maximizeWindow, minimizeWindow, windows, findWindowByType, updateWindowContent } = useWindows();
   const { isRecording, startRecording, stopRecording, transcript } = useAudioRecording();
   const { openCamera } = useCamera();
+  
+  // New emotion detection hook
+  const { emotionData, isEmotionActive, startEmotionDetection, stopEmotionDetection } = useEmotionDetection();
+
+  // Emotion helper functions
+  const getEmotionEmoji = (emotion) => {
+    const emojiMap = {
+      happy: '😊',
+      sad: '😢',
+      angry: '😠',
+      surprised: '😲',
+      fearful: '😨',
+      disgusted: '🤢',d: '🤗',
+      calm: '😌'
+    };
+    return emojiMap[emotion?.toLowerCase()] || '😐';
+  };
+
+  const getEmotionColor = (emotion, score) => {
+    const baseColors = {
+      happy: '#10B981',    // Green
+      excited: '#F59E0B',  // Yellow
+      surprised: '#8B5CF6', // Purple
+      calm: '#06B6D4',     // Cyan
+      neutral: '#6B7280',  // Gray
+      sad: '#3B82F6',      // Blue
+      angry: '#EF4444',    // Red
+      fearful: '#F97316',  // Orange
+      disgusted: '#84CC16' // Lime
+    };
+    
+    const color = baseColors[emotion?.toLowerCase()] || '#6B7280';
+    const opacity = Math.max(0.3, (score || 0.5));
+    return { color, opacity };
+  };
+
+  // Start emotion detection when camera is opened
+  useEffect(() => {
+    const existingCameraWindow = findWindowByType('camera');
+    if (existingCameraWindow && existingCameraWindow.isMaximized) {
+      stopEmotionDetection();
+    } else {
+      startEmotionDetection();
+    }
+  }, [windows, startEmotionDetection, stopEmotionDetection]);
 
   const handleSearch = async () => {
     if (query.trim()) {
@@ -200,10 +248,10 @@ export const SearchBar = ({ isMinimized, onSearch }) => {
     }
   }, [transcript]);
 
-  // Calculate dynamic width based on content
+  // Calculate dynamic width based on content (increased to accommodate emotion circle)
   const hasSearchButton = query.trim().length > 0;
-  const baseWidth = isMinimized ? 400 : 800;
-  const expandedWidth = hasSearchButton ? (isMinimized ? 520 : 920) : baseWidth;
+  const baseWidth = isMinimized ? 450 : 850;
+  const expandedWidth = hasSearchButton ? (isMinimized ? 570 : 970) : baseWidth;
 
   return (
     <motion.div
@@ -231,6 +279,42 @@ export const SearchBar = ({ isMinimized, onSearch }) => {
           transition={{ duration: 0.3, ease: "easeInOut" }}
         >
           <div className="flex items-center px-6 py-4">
+            {/* Emotion Indicator Circle */}
+            <AnimatePresence>
+              <motion.div
+                initial={{ opacity: 0, scale: 0 }}
+                animate={{ 
+                  opacity: isEmotionActive ? 1 : 0.3, 
+                  scale: isEmotionActive ? 1 : 0.8 
+                }}
+                className="flex-shrink-0 mr-3"
+              >
+                <div 
+                  className={`rounded-full flex items-center justify-center transition-all duration-300 ${
+                    isMinimized ? 'w-8 h-8 text-base' : 'w-10 h-10 text-lg'
+                  }`}
+                  style={{
+                    backgroundColor: isEmotionActive 
+                      ? `${getEmotionColor(emotionData?.emotion, emotionData?.score).color}${Math.round(getEmotionColor(emotionData?.emotion, emotionData?.score).opacity * 255).toString(16).padStart(2, '0')}`
+                      : 'rgba(255, 255, 255, 0.1)',
+                    boxShadow: isEmotionActive 
+                      ? `0 0 20px ${getEmotionColor(emotionData?.emotion, emotionData?.score).color}40`
+                      : 'none',
+                    border: `2px solid ${isEmotionActive ? getEmotionColor(emotionData?.emotion, emotionData?.score).color : 'rgba(255, 255, 255, 0.3)'}`
+                  }}
+                >
+                  <motion.span
+                    key={emotionData?.emotion} // This will trigger re-animation when emotion changes
+                    initial={{ scale: 0.5, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ duration: 0.3, ease: "backOut" }}
+                  >
+                    {getEmotionEmoji(emotionData?.emotion)}
+                  </motion.span>
+                </div>
+              </motion.div>
+            </AnimatePresence>
+
             <Search className="w-6 h-6 text-white/70 mr-4 flex-shrink-0" />
             <input
               type="text"
