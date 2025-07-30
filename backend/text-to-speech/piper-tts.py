@@ -17,7 +17,7 @@ app.add_middleware(
 
 # Windows paths to Piper binary and ONNX model
 PIPER_EXECUTABLE = "C:\\Users\\eren\\AppData\\Local\\Programs\\Python\\Python312\\Scripts\\piper.exe"  # Path to piper.exe
-PIPER_MODEL_PATH = "C:\\Users\\eren\\Documents\\robolearn-ai\\robolearn-ai\\backend\\text-to-speech\\en_US-amy-medium.onnx"  # Path to model
+PIPER_MODEL_PATH = "C:\\Users\\eren\\Documents\\robolearn-ai\\robolearn-ai\\backend\\text-to-speech\\en_US-lessac-high.onnx"  # Path to model
 
 
 class TTSRequest(BaseModel):
