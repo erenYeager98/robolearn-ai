@@ -15,8 +15,10 @@ export const SearchBar = ({ isMinimized, onSearch }) => {
   
   // Existing hooks
   const { createWindow, maximizeWindow, minimizeWindow, windows, findWindowByType, updateWindowContent } = useWindows();
-  const { isRecording, startRecording, stopRecording, transcript } = useAudioRecording();
-  const { openCamera } = useCamera();
+const { isRecording, startRecording, stopRecording } = useAudioRecording((newTranscript) => {
+  setQuery(newTranscript);
+  handleSearch(newTranscript)
+});  const { openCamera } = useCamera();
   
   // New emotion detection hook
   const { emotionData, isEmotionActive, startEmotionDetection, stopEmotionDetection } = useEmotionDetection();
@@ -63,7 +65,10 @@ export const SearchBar = ({ isMinimized, onSearch }) => {
     }
   }, [windows, startEmotionDetection, stopEmotionDetection]);
 
-  const handleSearch = async () => {
+  
+  const handleSearch = async (inputQuery) => {
+    const query = inputQuery || query; 
+
     if (query.trim()) {
       setIsSearching(true);
       onSearch?.(query);
@@ -96,7 +101,7 @@ export const SearchBar = ({ isMinimized, onSearch }) => {
 
       try {
         // Fetch research data from your model (main content)
-        const researchData = await searchResearch(query.trim());
+        const researchData = await searchResearch(query.trim(),emotionData?.emotion);
         
         // Update with main research data immediately
         updateWindowContent('text-response', {
@@ -242,11 +247,6 @@ export const SearchBar = ({ isMinimized, onSearch }) => {
     }
   };
 
-  useEffect(() => {
-    if (transcript) {
-      setQuery(transcript);
-    }
-  }, [transcript]);
 
   // Calculate dynamic width based on content (increased to accommodate emotion circle)
   const hasSearchButton = query.trim().length > 0;
@@ -320,7 +320,7 @@ export const SearchBar = ({ isMinimized, onSearch }) => {
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search anything..."
+              placeholder="What do you wanna know ? . . ."
               className={`flex-1 bg-transparent text-white placeholder-white/50 outline-none ${
                 isMinimized ? 'text-base' : 'text-xl'
               } min-w-0`}
