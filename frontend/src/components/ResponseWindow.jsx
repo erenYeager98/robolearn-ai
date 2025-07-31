@@ -1,4 +1,5 @@
 import React from 'react';
+import { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Minimize2, Maximize2, X, FileText, Image, Upload, Volume2, VolumeX } from 'lucide-react';
 import { useWindows } from '../contexts/WindowContext';
@@ -36,6 +37,7 @@ export const ResponseWindow = ({ windowId, content, isMinimized }) => {
     }
   };
 
+
   const handleReadAloud = async () => {
     if (playingId === windowId && isPlaying) {
       stopAudio();
@@ -45,6 +47,11 @@ export const ResponseWindow = ({ windowId, content, isMinimized }) => {
       await playAudio(windowId, textToRead);
     }
   };
+    useEffect(() => {
+  if (!isMinimized && content?.response) {
+    handleReadAloud();
+  }
+  }, [content?.response]);
 
   if (isMinimized) {
     return (
