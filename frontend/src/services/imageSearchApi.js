@@ -1,8 +1,8 @@
-const IMAGE_SEARCH_API_URL = 'https://erenyeager-dk.live/api/search-lens'; 
+const IMAGE_SEARCH_API_URL = 'https://api.erenyeager-dk.live/api/search-lens'; 
 
 export const searchByImage = async (imageUrl) => {
   try {
-    const response = await fetch("http://16.171.150.90:8000/search-lens", {
+    const response = await fetch(IMAGE_SEARCH_API_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'

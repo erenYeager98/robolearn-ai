@@ -1,26 +1,35 @@
-from fastapi import FastAPI, WebSocket, Request
-import os
-import tempfile
-import whisper
-import subprocess
+from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.responses import JSONResponse
-app = FastAPI()
-model = whisper.load_model("small")
 from fastapi.middleware.cors import CORSMiddleware
+import tempfile
+import subprocess
+import os
+import whisper
 
+app = FastAPI()
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Adjust this to your needs
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+model = whisper.load_model("small")
 
-@app.websocket("/ws/audio")
-async def websocket_endpoint(websocket: WebSocket):
-    await websocket.accept()
+@app.post("/transcribe")
+async def transcribe_audio(file: UploadFile = File(...)):
     try:
-        audio_data = await websocket.receive_bytes()
+        if file.content_type != "audio/webm":
+            raise HTTPException(status_code=400, detail="Invalid file type")
 
+        # Save uploaded WebM file
         with tempfile.NamedTemporaryFile(delete=False, suffix=".webm") as f:
-            f.write(audio_data)
+            f.write(await file.read())
             webm_path = f.name
 
         wav_path = webm_path.replace(".webm", ".wav")
 
+        # Convert to WAV for Whisper
         subprocess.run([
             "ffmpeg", "-y",
             "-i", webm_path,
@@ -29,29 +38,17 @@ async def websocket_endpoint(websocket: WebSocket):
             wav_path
         ], check=True)
 
+        # Transcribe
         result = model.transcribe(wav_path)
-        await websocket.send_json({"text": result["text"]})
+
+        # Cleanup
+        os.remove(webm_path)
+        os.remove(wav_path)
+
+        return JSONResponse(content={
+            "prompt": "Say something about your favorite technology.",  # Custom prompt
+            "transcription": result["text"]
+        })
 
     except Exception as e:
-        print(f"WebSocket error: {e}")
-    finally:
-        await websocket.close()
-        for f in [webm_path, wav_path]:
-            if os.path.exists(f):
-                os.remove(f)
-
-
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-@app.post("/research")
-async def research_endpoint(request: Request):
-    with open("demo_response.txt", "r", encoding="utf-8") as file:
-        content = file.read()
-    return JSONResponse(content={"response": content})
+        raise HTTPException(status_code=500, detail=str(e))

@@ -1,6 +1,7 @@
-const RESEARCH_API_URL = 'https://erenyeager-dk.live/api/research'; // Adjust this to your actual endpoint URL
+const RESEARCH_API_URL = 'https://api.erenyeager-dk.live/api/research'; // Adjust this to your actual endpoint URL
 
-export const searchResearch = async (question) => {
+export const searchResearch = async (question,emotion) => {
+  console.log('Searching research for:', question);
   try {
     const response = await fetch(RESEARCH_API_URL, {
       method: 'POST',
@@ -8,7 +9,8 @@ export const searchResearch = async (question) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        question: question
+        question: question,
+        emotion: emotion || 'neutral' // Include emotion if available
       })
     });
 

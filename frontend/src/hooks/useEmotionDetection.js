@@ -1,22 +1,9 @@
-/**
- * useEmotionDetection.js
- *
- * A React hook that:
- * 1. Opens a WebSocket connection to a FastAPI emotion‐detection backend at /ws/emotion * 2. Captures frames from the user’s webcam at a configurable interval.
- * 3. Sends base64‐encoded JPEG images (raw data URL) to the backend.
- * 4. Receives JSON payloads shaped as { emotion: "happy", score: 0.92 }.
- * 5. Exposes live emotion data and connection status to the UI.
- */
-
 import { useState, useRef, useCallback, useEffect } from 'react';
-import useWebSocket, { ReadyState } from 'react-use-websocket';
 
 // ───────────────────────────────────────────────────────────────────────────────
 // CONFIGURATION CONSTANTS
 // ───────────────────────────────────────────────────────────────────────────────
-const DEFAULT_WS_URL =
-  import.meta.env.VITE_EMOTION_WS_URL || // Vite (.env)
-  'ws://localhost:8001/ws/emotion';      // Fallback
+const DEFAULT_HTTP_URL = 'https://api.erenyeager-dk.live/api/detect-emotion';                          // Fallback to the new HTTP endpoint
 
 const FRAME_INTERVAL_MS = 2000; // Capture every 2 seconds
 const JPEG_QUALITY = 0.8;       // Canvas JPEG quality (0–1)
@@ -38,57 +25,46 @@ export const useEmotionDetection = () => {
   const canvasRef = useRef(null);
   const intervalId = useRef(null);
 
-  // ─── WebSocket setup via react-use-websocket ────────────────────────────────
-  const { sendMessage, lastMessage, readyState } = useWebSocket(
-    DEFAULT_WS_URL,
-    {
-      onOpen: () => console.info('[EmotionWS] connected to', DEFAULT_WS_URL),
-      onClose: () => console.warn('[EmotionWS] disconnected'),
-      onError: (err) => console.error('[EmotionWS] error', err),
-      shouldReconnect: () => true,
-      reconnectAttempts: Infinity,
-      reconnectInterval: 3000,
-      retryOnError: true
-    }
-  );
+  // ─── Frame capture and sending logic ───────────────────────────────────────
+  const captureAndSendFrame = useCallback(async () => {
+  if (!videoRef.current || !canvasRef.current) return;
 
-  // ─── Parse inbound emotion JSON ────────────────────────────────────────────
-  useEffect(() => {
-    if (!lastMessage) return;
+  const video = videoRef.current;
+  const canvas = canvasRef.current;
+  const ctx = canvas.getContext('2d');
+
+  canvas.width = video.videoWidth || 640;
+  canvas.height = video.videoHeight || 480;
+  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+  // Convert canvas to Blob (binary JPEG)
+  canvas.toBlob(async (blob) => {
+    if (!blob) return;
+
+    const formData = new FormData();
+    formData.append('file', blob, 'frame.jpg');
+
     try {
-      const { emotion, score } = JSON.parse(lastMessage.data);
+      const response = await fetch(DEFAULT_HTTP_URL, {
+        method: 'POST',
+        body: formData, // Automatically sets correct multipart/form-data headers
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const { emotion, score } = await response.json();
       setEmotionData({
         emotion: emotion || 'neutral',
         score: typeof score === 'number' ? score : 0,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
     } catch (err) {
-      console.error('[EmotionWS] JSON parse error', err);
+      console.error('[EmotionHTTP] Failed to send frame:', err);
     }
-  }, [lastMessage]);
-
-  // ─── Frame capture logic ────────────────────────────────────────────────────
-  const captureFrame = useCallback(() => {
-    if (
-      readyState !== ReadyState.OPEN ||
-      !videoRef.current ||
-      !canvasRef.current
-    ) return;
-
-    const video = videoRef.current;
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-
-    // Sync canvas size to video
-    canvas.width = video.videoWidth || 640;
-    canvas.height = video.videoHeight || 480;
-
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    const dataUrl = canvas.toDataURL('image/jpeg', JPEG_QUALITY);
-
-    // Send raw data URL string
-    sendMessage(dataUrl);
-  }, [readyState, sendMessage]);
+  }, 'image/jpeg', JPEG_QUALITY); // <- JPEG blob
+}, []);
 
   // ─── Start detection ────────────────────────────────────────────────────────
   const startEmotionDetection = useCallback(async () => {
@@ -98,7 +74,7 @@ export const useEmotionDetection = () => {
       // Request camera access
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: 'user', width: 640, height: 480 },
-        audio: false
+        audio: false,
       });
 
       // Create hidden video element
@@ -119,34 +95,32 @@ export const useEmotionDetection = () => {
 
       // Attach stream and wait for metadata then play
       videoRef.current.srcObject = stream;
-      videoRef.current.onloadedmetadata = () => {
-        videoRef.current.play().catch((err) => {
-          if (err.name !== 'AbortError')
-            console.error('[Emotion] play() error', err);
-        });
-      };
+      await new Promise((resolve) => {
+        videoRef.current.onloadedmetadata = () => {
+          videoRef.current.play().catch((err) => {
+            if (err.name !== 'AbortError') console.error('[Emotion] play() error', err);
+          });
+          resolve();
+        };
+      });
 
       // Start periodic frame captures
-      intervalId.current = setInterval(captureFrame, FRAME_INTERVAL_MS);
+      intervalId.current = setInterval(captureAndSendFrame, FRAME_INTERVAL_MS);
       setIsEmotionActive(true);
     } catch (err) {
       console.error('[Emotion] failed to start detection', err);
       setIsEmotionActive(false);
     }
-  }, [captureFrame, isEmotionActive]);
+  }, [captureAndSendFrame, isEmotionActive]);
 
   // ─── Stop detection ─────────────────────────────────────────────────────────
   const stopEmotionDetection = useCallback(() => {
-    // Clear interval
     if (intervalId.current) {
       clearInterval(intervalId.current);
       intervalId.current = null;
     }
-    // Stop video tracks
     if (videoRef.current?.srcObject) {
-      videoRef.current.srcObject
-        .getTracks()
-        .forEach((track) => track.stop());
+      videoRef.current.srcObject.getTracks().forEach((track) => track.stop());
       videoRef.current.srcObject = null;
     }
     setIsEmotionActive(false);
@@ -165,11 +139,11 @@ export const useEmotionDetection = () => {
     };
   }, [stopEmotionDetection]);
 
+  // connectionState is no longer relevant in an HTTP polling model
   return {
-    emotionData,         // { emotion, score, timestamp }
-    isEmotionActive,     // boolean: whether detection is running
+    emotionData,
+    isEmotionActive,
     startEmotionDetection,
     stopEmotionDetection,
-    connectionState: readyState
   };
 };

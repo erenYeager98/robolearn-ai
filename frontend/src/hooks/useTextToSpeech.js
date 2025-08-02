@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback } from 'react';
 
-const TEXT_TO_SPEECH_API_URL = 'http://localhost:5050/api/text-to-speech'; // Replace with your actual endpoint
+const TEXT_TO_SPEECH_API_URL = 'https://api.erenyeager-dk.live/api/text-to-speech'; // Replace with your actual endpoint
 
 export const useTextToSpeech = () => {
   const [state, setState] = useState({

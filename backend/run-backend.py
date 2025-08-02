@@ -1,54 +1,39 @@
-from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
-from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+import whisper
 from transformers import AutoTokenizer, AutoModelForCausalLM
-from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi import FastAPI, File, UploadFile, HTTPException
-from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fer import FER
-from fastapi import FastAPI, Request, Response
-from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from fastapi import Response
 import subprocess
+import ollama
 import tempfile
 import os
 import requests
 from fastapi import FastAPI, UploadFile, File, HTTPException, Request
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
 from fastapi import Request
 from pathlib import Path
 from fastapi.responses import JSONResponse
 import uuid
-import os
 import shutil
 import numpy as np
 import cv2
 import base64
 import torch
-import os
 
 app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["https://erenyeager-dk.live"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# Serve static files from dist/ (React build output)
-app.mount("/assets", StaticFiles(directory="../frontend/dist/assets"), name="assets")
-
-@app.get("/")
-async def serve_root():
-    return FileResponse("../frontend/dist/index.html")
 
 
 # Load shared tokenizer and two separate models
@@ -218,7 +203,50 @@ async def detect_emotion(file: UploadFile = File(...)):
         return {"emotion": emotion, "score": float(score)}
 
     except Exception as e:
+        print(f"Error during emotion detection: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+    
+
+whisper_model = whisper.load_model("small")
+
+@app.post("/transcribe")
+async def transcribe_audio(file: UploadFile = File(...)):
+    try:
+        if file.content_type != "audio/webm":
+            raise HTTPException(status_code=400, detail="Invalid file type")
+
+        # Save uploaded WebM file
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".webm") as f:
+            f.write(await file.read())
+            webm_path = f.name
+
+        wav_path = webm_path.replace(".webm", ".wav")
+
+        # Convert to WAV for Whisper
+        subprocess.run([
+            "ffmpeg", "-y",
+            "-i", webm_path,
+            "-ar", "16000",
+            "-ac", "1",
+            wav_path
+        ], check=True)
+
+        # Transcribe
+        result = whisper_model.transcribe(wav_path)
+
+        # Cleanup
+        os.remove(webm_path)
+        os.remove(wav_path)
+
+        return JSONResponse(content={
+            "prompt": "Say something about your favorite technology.",  # Custom prompt
+            "transcription": result["text"]
+        })
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @app.websocket("/ws/emotion")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
@@ -250,6 +278,50 @@ async def websocket_endpoint(websocket: WebSocket):
         print("WebSocket disconnected")
 
 
+class ImagePayload(BaseModel):
+    image_data: str # This will hold the base64 data URL
+
+@app.post("/api/emotion")
+async def http_emotion_endpoint(payload: ImagePayload):
+    """
+    Receives a base64 encoded image in a POST request, analyzes the emotion,
+    and returns the result as JSON.
+    """
+    print(ImagePayload)
+    try:
+        # 2. Decode the incoming image from the payload
+        # The data URL format is "data:image/jpeg;base64,..."
+        # We need the part after the comma.
+        image_data = base64.b64decode(payload.image_data.split(",")[1])
+        nparr = np.frombuffer(image_data, np.uint8)
+        frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+
+        # 3. Get the top emotion (same logic as before)
+        top = detector.top_emotion(frame)
+        
+        if top and top[0] is not None:
+            emotion, score = top
+            # 4. Return a JSON response directly
+            print(emotion)
+            return {
+                "emotion": emotion,
+                "score": round(float(score), 2)
+            }
+        else:
+            # No face detected
+            return {
+                "emotion": None,
+                "score": 0.0
+            }
+        
+    except Exception as e:
+        print(f"Error processing image: {e}")
+        # Return an error or a default state
+        return {
+            "emotion": "neutral",
+            "score": 0.0
+        }
+    
 
 #Serper.dev Scholar Search API
 
@@ -339,7 +411,7 @@ async def debug_body(request: Request):
 
 # Windows paths to Piper binary and ONNX model
 PIPER_EXECUTABLE = "C:\\Users\\eren\\AppData\\Local\\Programs\\Python\\Python312\\Scripts\\piper.exe"  # Path to piper.exe
-PIPER_MODEL_PATH = "C:\\Users\\eren\\Documents\\robolearn-ai\\robolearn-ai\\backend\\text-to-speech\\en_US-lessac-high.onnx"  # Path to model
+PIPER_MODEL_PATH = "C:\\Users\\eren\\Documents\\robolearn-ai\\robolearn-ai\\backend\\text-to-speech\\en_US-amy-medium.onnx"  # Path to model
 
 
 class TTSRequest(BaseModel):
@@ -393,11 +465,56 @@ async def text_to_speech(request: TTSRequest):
         if os.path.exists(temp_wav_path):
             os.remove(temp_wav_path)
 
+MODEL_NAME = 'gemma3:4b'
+# The instruction prompt as requested
+INSTRUCTION_PROMPT = "answer the question shown in the image."
+# Directory to store temporary images
+TEMP_DIR = "temp_uploads"
 
-@app.get("/{full_path:path}")
-async def serve_frontend(full_path: str):
+@app.on_event("startup")
+async def startup_event():
+    """Create the temporary directory on app startup."""
+    os.makedirs(TEMP_DIR, exist_ok=True)
+
+
+@app.post("/analyze-image/")
+async def analyze_image_endpoint(file: UploadFile = File(...)):
     """
-    Catch-all route for React Router paths.
-    Always returns index.html, letting React handle the routing.
+    Accepts an image file and returns the model's analysis based on a fixed prompt.
     """
-    return FileResponse("../frontend/dist/index.html")
+    # Create a unique temporary path to save the uploaded file
+    unique_filename = f"{uuid.uuid4()}_{file.filename}"
+    temp_file_path = os.path.join(TEMP_DIR, unique_filename)
+
+    try:
+        # 1. Save the uploaded image to the temporary file path
+        with open(temp_file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+
+        # 2. Call the Ollama model with the image and the fixed prompt
+        print(f"🤖 Analyzing {file.filename} with model '{MODEL_NAME}'...")
+        response = ollama.chat(
+            model=MODEL_NAME,
+            messages=[
+                {
+                    'role': 'user',
+                    'content': INSTRUCTION_PROMPT,
+                    'images': [temp_file_path]
+                }
+            ]
+        )
+        model_output = response['message']['content']
+        print("Analysis complete.")
+        print(f"Model response: {model_output}")
+
+        # 3. Return the model's response
+        return {"filename": file.filename, "response": model_output}
+
+    except Exception as e:
+        # Handle potential errors from the model or file system
+        raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
+
+    finally:
+        # 4. Clean up: always remove the temporary file
+        if os.path.exists(temp_file_path):
+            os.remove(temp_file_path)

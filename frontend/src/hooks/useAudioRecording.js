@@ -3,8 +3,8 @@ import { useState, useRef, useCallback } from "react";
 export const useAudioRecording = (onTranscript) => {
   const [isRecording, setIsRecording] = useState(false);
   const mediaRecorderRef = useRef(null);
+  const [transcription, setTranscription] = useState("");
   const audioChunksRef = useRef([]);
-  const websocketRef = useRef(null);
 
   const startRecording = useCallback(async () => {
     try {
@@ -17,58 +17,46 @@ export const useAudioRecording = (onTranscript) => {
       audioChunksRef.current = [];
 
       mediaRecorder.ondataavailable = (event) => {
-        console.log("Received audio chunk:", event.data.size, "bytes");
         if (event.data.size > 0) {
           audioChunksRef.current.push(event.data);
         }
       };
 
       mediaRecorder.onstop = async () => {
-        console.log("Recording stopped. Preparing to send audio...");
+        console.log("Recording stopped. Preparing to send via HTTP POST...");
+
         const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
-        const arrayBuffer = await audioBlob.arrayBuffer();
+        const formData = new FormData();
+        formData.append("file", audioBlob, "recording.webm");
 
-        console.log("Opening WebSocket...");
-        websocketRef.current = new WebSocket("ws://192.168.29.38:5000/ws/audio");
+        try {
+          const response = await fetch("https://api.erenyeager-dk.live/transcribe", {
+            method: "POST",
+            body: formData,
+          });
 
-        websocketRef.current.onopen = () => {
-          console.log("WebSocket connected. Sending audio...");
-          websocketRef.current.send(arrayBuffer);
-        };
+          if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
-        websocketRef.current.onmessage = (event) => {
-          console.log("Message received from server:", event.data);
-          try {
-            const { text, error } = JSON.parse(event.data);
-            if (error) {
-              console.error("Transcription error:", error);
-            } else if (onTranscript) {
-              console.log("Transcription received:", text);
-              onTranscript(text); // <- CALLS YOUR `setText(...)` FROM SearchBar.jsx or App.jsx
-            }
-          } catch (err) {
-            console.error("JSON parsing error:", err);
-          }
+          const { transcription, prompt } = await response.json();
 
-          websocketRef.current.close();
-        };
-
-        websocketRef.current.onerror = (err) => {
-          console.error("WebSocket error:", err);
-        };
+          console.log("Prompt:", prompt);
+          console.log("Transcription:", transcription);
+          onTranscript(transcription);
+          setTranscription(transcription); 
+        } catch (err) {
+          console.error("Failed to send audio via HTTP:", err);
+        }
       };
 
       mediaRecorderRef.current = mediaRecorder;
       mediaRecorder.start();
       setIsRecording(true);
-      console.log(" Recording started...");
     } catch (err) {
-      console.error("Error accessing microphone:", err);
+      console.error("Microphone error:", err);
     }
   }, [onTranscript]);
 
   const stopRecording = useCallback(() => {
-    console.log("Stopping recording...");
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
       mediaRecorderRef.current.stop();
       setIsRecording(false);
@@ -76,9 +64,10 @@ export const useAudioRecording = (onTranscript) => {
   }, []);
 
   return {
-    
     isRecording,
     startRecording,
     stopRecording,
+    transcription
+
   };
 };
