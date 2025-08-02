@@ -229,6 +229,14 @@ export const ResponseWindow = ({ windowId, content, isMinimized }) => {
                 isLoading={false}
               />
             )}
+            {content.researchData && (
+            <div className="bg-white/10 rounded-lg p-6">
+              <h4 className="text-white font-medium mb-3 text-lg">AI Analysis</h4>
+              <p className="text-white/80 whitespace-pre-wrap">{content.researchData.response}</p>
+              {/* Or display multiple fields if your API returns more */}
+            </div>
+          )}
+
 
             {/* Show captured image if it exists */}
             {content.image && (

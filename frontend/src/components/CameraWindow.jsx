@@ -5,6 +5,7 @@ import { useWindows } from '../contexts/WindowContext';
 import { useCamera } from '../hooks/useCamera';
 import { uploadImage } from '../services/imageUploadApi';
 import { searchByImage } from '../services/imageSearchApi';
+import { searchResearch } from '../services/imageResearchApi';
 
 export const CameraWindow = ({ windowId, isMinimized }) => {
   const { minimizeWindow, maximizeWindow, closeWindow, createWindow, findWindowByType } = useWindows();
@@ -39,7 +40,10 @@ export const CameraWindow = ({ windowId, isMinimized }) => {
   const handleRetake = () => {
     resetCamera();
   };
+
+
   const handleImageSearch = async () => {
+    
     // Check if image response window already exists
     const existingImageWindow = findWindowByType('image-response');
     
@@ -72,7 +76,8 @@ export const CameraWindow = ({ windowId, isMinimized }) => {
       // Convert data URL to blob
       const response = await fetch(capturedImage);
       const blob = await response.blob();
-      
+      const researchData = await searchResearch(blob);
+      console.log('Research data received:+ from camera component', researchData);
       // Upload image to get public URL
       const imageUrl = await uploadImage(blob);
       
@@ -82,7 +87,7 @@ export const CameraWindow = ({ windowId, isMinimized }) => {
       // Update with actual data after processing
       updateWindowContent('image-response', {
         query: 'Image search',
-        response: 'Visual search results for your captured image',
+        response: researchData.response,
         image: capturedImage,
         imageUrl: imageUrl,
         imageSearchData: imageSearchData,
@@ -95,7 +100,7 @@ export const CameraWindow = ({ windowId, isMinimized }) => {
       // Update with error message
       updateWindowContent('image-response', {
         query: 'Image search',
-        response: 'Error processing image search. Please try again.',
+        response: 'error processing image search bro',
         image: capturedImage,
         type: 'image',
         isLoading: false
