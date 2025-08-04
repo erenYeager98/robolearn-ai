@@ -15,6 +15,7 @@ function createWindow() {
       nodeIntegration: false,
       contextIsolation: true,
       enableRemoteModule: false,
+      enableBlinkFeatures: 'MediaStream',
       webSecurity: true
     },
     icon: path.join(__dirname, '../public/vite.svg'),
@@ -155,4 +156,17 @@ app.on('web-contents-created', (event, contents) => {
     navigationEvent.preventDefault();
     require('electron').shell.openExternal(navigationURL);
   });
+});
+
+app.whenReady().then(() => {
+  session.defaultSession.setPermissionRequestHandler((webContents, permission, callback) => {
+    if (permission === 'media') {
+      // Always allow media access (camera/mic)
+      callback(true);
+    } else {
+      callback(false); // deny all others
+    }
+  });
+
+  createWindow();
 });
