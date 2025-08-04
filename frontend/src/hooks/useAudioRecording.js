@@ -30,7 +30,7 @@ export const useAudioRecording = (onTranscript) => {
         formData.append("file", audioBlob, "recording.webm");
 
         try {
-          const response = await fetch("https://api.erenyeager-dk.live/transcribe", {
+          const response = await fetch("https://api.erenyeager-dk.live/api/transcribe", {
             method: "POST",
             body: formData,
           });
