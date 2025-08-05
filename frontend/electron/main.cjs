@@ -49,14 +49,19 @@ function createWindow() {
 // This method will be called when Electron has finished initialization
 app.whenReady().then(() => {
   createWindow();
-  ipcMain.on('launch-onboard', () => {
-    exec('onboard', (err) => {
-      if (err) {
-        console.error('Failed to launch onboard:', err);
-      }
-    });
+  // ipcMain.on('launch-onboard', () => {
+  //   exec('onboard', (err) => {
+  //     if (err) {
+  //       console.error('Failed to launch onboard:', err);
+  //     }
+  //   });
+  // });
+  const onboard = spawn('onboard', ['--no-systray'], {
+    detached: true,
+    stdio: 'ignore'
   });
 
+  onboard.unref();
   // Create application menu
   const template = [
     {
