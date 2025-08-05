@@ -240,6 +240,8 @@ const { isRecording, startRecording, stopRecording } = useAudioRecording((newTra
   };
 
   const handleSearchBarClick = () => {
+  window.electron.ipcRenderer.send('launch-onboard');
+
     if (isMinimized) {
       // Close all maximized windows to center the search bar
       const maximizedWindows = windows.filter(w => w.isMaximized && w.type !== 'search');
