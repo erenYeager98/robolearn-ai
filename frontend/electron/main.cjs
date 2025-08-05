@@ -19,7 +19,11 @@ function createWindow() {
       enableRemoteModule: false,
       enableBlinkFeatures: 'MediaStream',
       webSecurity: true,
-      preload: path.join(__dirname, 'preload.js')
+      preload: path.join(__dirname, 'preload.js'),
+      media: {
+        audio: true,
+        video: true
+      }
     },
     icon: path.join(__dirname, '../public/vite.svg'),
     titleBarStyle: 'default',
