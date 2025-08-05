@@ -33,13 +33,13 @@ function createWindow() {
   });
 
   // Load the app
-  if (isDev) {
+  // if (isDev) {
     mainWindow.loadURL('http://localhost:5173');
     // Open DevTools in development
     mainWindow.webContents.openDevTools();
-  } else {
-    mainWindow.loadFile(path.join(__dirname, '../dist/index.html'));
-  }
+  // } else {
+  //   mainWindow.loadFile(path.join(__dirname, '../dist/index.html'));
+  // }
 
   // Show window when ready to prevent visual flash
   mainWindow.once('ready-to-show', () => {
