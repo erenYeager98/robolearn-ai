@@ -21,7 +21,7 @@ function createWindow() {
       sandbox: false,
       enableBlinkFeatures: 'MediaStream',
       webSecurity: true,
-      preload: path.join(__dirname, 'preload.js'),
+      preload: path.join(__dirname, 'preload.cjs'),
       media: {
         audio: true,
         video: true
