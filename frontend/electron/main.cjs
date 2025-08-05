@@ -5,6 +5,7 @@ const { exec } = require('child_process');
 
 
 let mainWindow;
+app.commandLine.appendSwitch('enable-unsafe-webgpu');
 
 function createWindow() {
   // Create the browser window
