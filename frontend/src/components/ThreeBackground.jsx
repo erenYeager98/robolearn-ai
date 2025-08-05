@@ -16,13 +16,13 @@ export const ThreeBackground = () => {
     const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
     
     renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1)); // Cap pixel ratio
     renderer.setClearColor(0x000000, 0);
     mountRef.current.appendChild(renderer.domElement);
 
     // Create enhanced particle system
     const particlesGeometry = new THREE.BufferGeometry();
-    const particlesCount = 800;
+    const particlesCount = 300;
     const posArray = new Float32Array(particlesCount * 3);
     const colorArray = new Float32Array(particlesCount * 3);
 
