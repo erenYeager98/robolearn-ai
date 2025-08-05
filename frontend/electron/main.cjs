@@ -1,6 +1,8 @@
 const { app, BrowserWindow, Menu } = require('electron');
 const path = require('path');
 const isDev = process.env.NODE_ENV === 'development';
+const { exec } = require('child_process');
+
 
 let mainWindow;
 
@@ -16,7 +18,8 @@ function createWindow() {
       contextIsolation: true,
       enableRemoteModule: false,
       enableBlinkFeatures: 'MediaStream',
-      webSecurity: true
+      webSecurity: true,
+      preload: path.join(__dirname, 'preload.js')
     },
     icon: path.join(__dirname, '../public/vite.svg'),
     titleBarStyle: 'default',
@@ -46,6 +49,13 @@ function createWindow() {
 // This method will be called when Electron has finished initialization
 app.whenReady().then(() => {
   createWindow();
+  ipcMain.on('launch-onboard', () => {
+    exec('onboard', (err) => {
+      if (err) {
+        console.error('Failed to launch onboard:', err);
+      }
+    });
+  });
 
   // Create application menu
   const template = [

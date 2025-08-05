@@ -320,6 +320,11 @@ const { isRecording, startRecording, stopRecording } = useAudioRecording((newTra
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
+              onFocus={() => {
+              if (window?.electronAPI?.launchOnboard) {
+                window.electronAPI.launchOnboard();
+              }
+              }}
               placeholder="What do you wanna know ? . . ."
               className={`flex-1 bg-transparent text-white placeholder-white/50 outline-none ${
                 isMinimized ? 'text-base' : 'text-xl'
