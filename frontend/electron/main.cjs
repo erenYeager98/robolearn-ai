@@ -6,13 +6,7 @@ const { exec } = require('child_process');
 
 let mainWindow;
 app.commandLine.appendSwitch('enable-unsafe-swiftshader');
-session.defaultSession.setPermissionRequestHandler((webContents, permission, callback) => {
-  if (permission === 'media') {
-    callback(true); // Approve camera/microphone
-  } else {
-    callback(false);
-  }
-});
+
 function createWindow() {
   // Create the browser window
   mainWindow = new BrowserWindow({
