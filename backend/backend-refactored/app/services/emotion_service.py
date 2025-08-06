@@ -22,6 +22,9 @@ def detect_emotion_from_bytes(detector: FER, image_bytes: bytes):
             return {"emotion": None, "score": 0.0, "message": "No face detected"}
 
         emotion, score = top_emotion
+        print(f"Detected emotion: {emotion} with score: {score}")
+        if(emotion != "happy"):
+            emotion = "neutral"  
         return {"emotion": emotion, "score": float(score)}
 
     except Exception as e:
