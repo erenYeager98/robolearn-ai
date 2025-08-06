@@ -275,17 +275,10 @@ export const ResponseWindow = ({ windowId, content, isMinimized }) => {
               <h4 className="text-white font-medium mb-3 text-lg">Additional Information</h4>
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-base">
-                  <span className="text-white/60">Response Time</span>
-                  <span className="text-white/80">0.34s</span>
+                  <span className="text-white/60">Connect local repositories to view local library results</span>
+                  <span className="text-white/80"></span>
                 </div>
-                <div className="flex items-center justify-between text-base">
-                  <span className="text-white/60">Sources</span>
-                  <span className="text-white/80">3 found</span>
-                </div>
-                <div className="flex items-center justify-between text-base">
-                  <span className="text-white/60">Type</span>
-                  <span className="text-white/80 capitalize">{content?.type || 'text'}</span>
-                </div>
+                
               </div>
             </div>
           </div>

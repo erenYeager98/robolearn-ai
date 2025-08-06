@@ -3,10 +3,13 @@ import { motion } from 'framer-motion';
 import { ExternalLink, FileText, Quote, Calendar, Users, Volume2, VolumeX } from 'lucide-react';
 import { useTextToSpeech } from '../hooks/useTextToSpeech';
 import { useWindows } from '../contexts/WindowContext';
+import { useSummarizeAndSpeak } from '../hooks/useSummarizeAndSpeak';
 
 export const ScholarTiles = ({ scholarData, isLoading }) => {
   const { playingId, isPlaying, playAudio, stopAudio } = useTextToSpeech();
   const { createWindow, maximizeWindow, findWindowByType } = useWindows();
+  const { summarizeAndSpeak, isSummaryLoading, isSummaryPlaying } = useSummarizeAndSpeak();
+
 
   // Check if we should show loading (either isLoading prop or scholarLoading from content)
   const showLoading = isLoading;
@@ -124,8 +127,13 @@ export const ScholarTiles = ({ scholarData, isLoading }) => {
             )}
 
             {/* Read aloud button */}
-            <button
-              onClick={() => handleReadAloud(paper)}
+            <button 
+            // disabled={isSummaryLoading || isSummaryPlaying}
+              onClick={() => summarizeAndSpeak({
+                    title: paper.title,
+                    snippet: paper.snippet,
+                    author: "Vaswani et al."
+                  })}
               className={`absolute top-4 right-4 p-2 rounded-full transition-all duration-200 z-10 ${
                 playingId === paper.id && isPlaying
                   ? 'bg-blue-500/80 hover:bg-blue-600/80 text-white shadow-lg shadow-blue-500/25'
@@ -207,15 +215,7 @@ export const ScholarTiles = ({ scholarData, isLoading }) => {
         ))}
       </div>
       
-      {scholarData.searchParameters && (
-        <div className="mt-6 pt-4 border-t border-white/10">
-          <p className="text-sm text-white/40">
-            Search: "{scholarData.searchParameters.q}" • 
-            Engine: {scholarData.searchParameters.engine} • 
-            Credits used: {scholarData.credits || 1}
-          </p>
-        </div>
-      )}
+      
     </div>
   );
 };

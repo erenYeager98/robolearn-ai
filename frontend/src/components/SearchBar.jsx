@@ -7,6 +7,7 @@ import { useCamera } from '../hooks/useCamera';
 import { useEmotionDetection } from '../hooks/useEmotionDetection';
 import { searchScholar } from '../services/scholarApi';
 import { searchResearch } from '../services/researchApi';
+import { input } from 'framer-motion/client';
 
 export const SearchBar = ({ isMinimized, onSearch }) => {
   const [query, setQuery] = useState('');
@@ -31,7 +32,8 @@ const { isRecording, startRecording, stopRecording } = useAudioRecording((newTra
       angry: '😠',
       surprised: '😲',
       fearful: '😨',
-      disgusted: '🤢',d: '🤗',
+      disgusted: '🤢',
+      d: '🤗',
       calm: '😌'
     };
     return emojiMap[emotion?.toLowerCase()] || '😐';
@@ -67,8 +69,9 @@ const { isRecording, startRecording, stopRecording } = useAudioRecording((newTra
 
   
   const handleSearch = async (inputQuery) => {
-    const query = inputQuery || query; 
-
+    if (inputQuery== ''){
+    const query = inputQuery ; 
+    }
     if (query.trim()) {
       setIsSearching(true);
       onSearch?.(query);

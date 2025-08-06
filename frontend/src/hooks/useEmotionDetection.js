@@ -5,7 +5,7 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 // ───────────────────────────────────────────────────────────────────────────────
 const DEFAULT_HTTP_URL = 'https://api.erenyeager-dk.live/api/detect-emotion';                          // Fallback to the new HTTP endpoint
 
-const FRAME_INTERVAL_MS = 2000; // Capture every 2 seconds
+const FRAME_INTERVAL_MS = 5000; // Capture every 2 seconds
 const JPEG_QUALITY = 0.8;       // Canvas JPEG quality (0–1)
 
 // ───────────────────────────────────────────────────────────────────────────────
