@@ -243,7 +243,6 @@ const { isRecording, startRecording, stopRecording } = useAudioRecording((newTra
   };
 
   const handleSearchBarClick = async () => {
-  window.electron.ipcRenderer.send('launch-onboard');
   try {
     await fetch('http://localhost:8000/open-keyboard', {
       method: 'POST'
