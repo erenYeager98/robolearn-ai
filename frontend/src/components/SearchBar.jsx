@@ -242,8 +242,16 @@ const { isRecording, startRecording, stopRecording } = useAudioRecording((newTra
     event.target.value = '';
   };
 
-  const handleSearchBarClick = () => {
+  const handleSearchBarClick = async () => {
   window.electron.ipcRenderer.send('launch-onboard');
+  try {
+    await fetch('http://localhost:8000/open-keyboard', {
+      method: 'POST'
+    });
+    console.log('✅ Keyboard request sent');
+  } catch (error) {
+    console.error('❌ Failed to send keyboard request:', error);
+  }
 
     if (isMinimized) {
       // Close all maximized windows to center the search bar
@@ -325,11 +333,7 @@ const { isRecording, startRecording, stopRecording } = useAudioRecording((newTra
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              onFocus={() => {
-              if (window?.electronAPI?.launchOnboard) {
-                window.electronAPI.launchOnboard();
-              }
-              }}
+              
               placeholder="What do you wanna know ? . . ."
               className={`flex-1 bg-transparent text-white placeholder-white/50 outline-none ${
                 isMinimized ? 'text-base' : 'text-xl'
