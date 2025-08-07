@@ -5,7 +5,6 @@ const { exec } = require('child_process');
 
 
 let mainWindow;
-app.commandLine.appendSwitch('enable-unsafe-swiftshader');
 
 function createWindow() {
   // Create the browser window
@@ -18,9 +17,9 @@ function createWindow() {
       nodeIntegration: false,
       contextIsolation: true,
       enableRemoteModule: false,
-      sandbox: false,
+      sandbox: true,
       enableBlinkFeatures: 'MediaStream',
-      webSecurity: true,
+      webSecurity: false,
       preload: path.join(__dirname, 'preload.cjs'),
       media: {
         audio: true,

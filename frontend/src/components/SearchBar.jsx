@@ -392,7 +392,7 @@ const { isRecording, startRecording, stopRecording } = useAudioRecording((newTra
                 <Camera className={isMinimized ? 'w-4 h-4' : 'w-5 h-5'} />
               </button>
 
-              <button
+              {/* <button
                 onClick={(e) => {
                   e.stopPropagation();
                   handleUploadClick();
@@ -400,7 +400,7 @@ const { isRecording, startRecording, stopRecording } = useAudioRecording((newTra
                 className={`rounded-full bg-white/20 hover:bg-white/30 text-white/70 transition-all flex-shrink-0 ${isMinimized ? 'p-2' : 'p-3'}`}
               >
                 <Upload className={isMinimized ? 'w-4 h-4' : 'w-5 h-5'} />
-              </button>
+              </button> */}
             </div>
           </div>
         </motion.div>
