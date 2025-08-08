@@ -72,13 +72,12 @@ export const ScholarViewWindow = ({ windowId, content, isMinimized }) => {
       
       <div className="h-[40rem] bg-white/5">
         {content?.url ? (
-          <iframe
-            src={content.url}
-            className="w-full h-full border-0"
-            title={content.title}
-            sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
-            loading="lazy"
+          <img
+            src={`https://api.erenyeager-dk.live/screenshot?url=${content.url}`}
+            alt="Website preview"
+            className="w-full h-full object-cover"
           />
+
         ) : (
           <div className="flex items-center justify-center h-full">
             <div className="text-center">

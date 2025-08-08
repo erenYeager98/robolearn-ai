@@ -1,4 +1,4 @@
-const RESEARCH_API_URL = 'https://localhost:8000/api/analyze-image/'; // Adjust this to your actual endpoint URL
+const RESEARCH_API_URL = 'https://api.erenyeager-dk.live/api/analyze-image/'; // Adjust this to your actual endpoint URL
 
 export const searchResearch = async (imageBlob) => {
   try {

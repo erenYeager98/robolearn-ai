@@ -100,7 +100,7 @@ export const CameraWindow = ({ windowId, isMinimized }) => {
       // Update with error message
       updateWindowContent('image-response', {
         query: 'Image search',
-        response: 'error processing image search bro',
+        response: 'error processing image search please try again.',
         image: capturedImage,
         type: 'image',
         isLoading: false

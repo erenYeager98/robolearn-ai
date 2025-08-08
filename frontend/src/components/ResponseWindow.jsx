@@ -231,7 +231,7 @@ export const ResponseWindow = ({ windowId, content, isMinimized }) => {
             )}
             {content.researchData && (
             <div className="bg-white/10 rounded-lg p-6">
-              <h4 className="text-white font-medium mb-3 text-lg">AI Analysis</h4>
+              <h4 className="text-white font-medium mb-3 text-lg"></h4>
               <p className="text-white/80 whitespace-pre-wrap">{content.researchData.response}</p>
               {/* Or display multiple fields if your API returns more */}
             </div>
@@ -272,10 +272,10 @@ export const ResponseWindow = ({ windowId, content, isMinimized }) => {
             )}
             
             <div className="bg-white/10 rounded-lg p-6">
-              <h4 className="text-white font-medium mb-3 text-lg">Additional Information</h4>
+              <h4 className="text-white font-medium mb-3 text-lg">Institution Library</h4>
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-base">
-                  <span className="text-white/60">Connect local repositories to view local library results</span>
+                  <span className="text-white/60">Enable local access for library articles.</span>
                   <span className="text-white/80"></span>
                 </div>
                 
