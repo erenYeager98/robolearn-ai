@@ -59,7 +59,7 @@ def generate_summary(tokenizer, model, device, content: str) -> str:
     """Generates a summary from the summarize model."""
     instruction = (
         "You are an expert academic assistant.\nSummarize the given content in about 50 words, even if the given content is shorter, you have to make up some stuff and make about 50 words\n"
-        "The summary must start with: 'This article states that'.\nWrite clearly and professionally. Do not add notes, opinions, or extra commentary."
+        "The summary must start with: 'This article states that'.\nWrite clearly and professionally. Do not add notes, opinions, or extra commentary, do not respond with bold text formatters or any other formatting.\n"
     )
     prompt = f"<|start_header_id|>system<|end_header_id|>\n{instruction}<|eot_id|>\n<|start_header_id|>user<|end_header_id|>\n{content.strip()}<|eot_id|>\n<|start_header_id|>assistant<|end_header_id|>\nThis article states that "
     

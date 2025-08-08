@@ -7,7 +7,7 @@ from contextlib import asynccontextmanager  # <-- 1. Import the context manager
 
 from app.core.config import settings
 from app.services import ai_service, emotion_service, audio_service
-from app.api.routers import ai_processing, audio, emotion, external_search, utility
+from app.api.routers import ai_processing, audio, emotion, external_search, utility, proxy
 import os
 
 # 2. Define the lifespan manager
@@ -63,6 +63,7 @@ app.include_router(audio.router, prefix=api_prefix, tags=["Audio"])
 app.include_router(emotion.router, prefix=api_prefix, tags=["Emotion"])
 app.include_router(external_search.router, prefix=api_prefix, tags=["External Search"])
 app.include_router(utility.router, prefix=api_prefix, tags=["Utility"])
+app.include_router(proxy.router, prefix=api_prefix, tags=["Proxy"])
 
 # Root endpoint
 @app.get("/")
