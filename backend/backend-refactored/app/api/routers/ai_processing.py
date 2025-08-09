@@ -42,9 +42,9 @@ async def summarize_endpoint(
 async def analyze_image_endpoint(file: UploadFile = File(...)):
     temp_file_path = file_service.save_temp_file(file)
     try:
-        #model_output = ai_service.analyze_image_with_ollama(temp_file_path)
-        #print("Model output:", model_output)
-        model_output = "dummy response"
+        model_output = ai_service.analyze_image_with_ollama(temp_file_path)
+        print("Model output:", model_output)
+        # model_output = "dummy response"
         return {"filename": file.filename, "response": model_output}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
