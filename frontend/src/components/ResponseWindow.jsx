@@ -115,7 +115,7 @@ export const ResponseWindow = ({ windowId, content, isMinimized }) => {
           </button>
         </div>
       </div>
-      
+
       <div className="p-8 min-h-[32rem] max-h-[40rem] overflow-y-auto response-window-content">
         {content.isLoading ? (
           <div className="space-y-4">
@@ -175,7 +175,7 @@ export const ResponseWindow = ({ windowId, content, isMinimized }) => {
                 <>
                   {/* Animated gradient overlay */}
                   <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-blue-500/10 animate-pulse pointer-events-none rounded-lg" />
-                  
+
                   {/* Floating particles effect */}
                   <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-lg">
                     {[...Array(8)].map((_, i) => (
@@ -231,7 +231,7 @@ export const ResponseWindow = ({ windowId, content, isMinimized }) => {
             )}
             {content.researchData && (
             <div className="bg-white/10 rounded-lg p-6">
-              <h4 className="text-white font-medium mb-3 text-lg"></h4>
+              <h4 className="text-white font-medium mb-3 text-lg">AI Analysis</h4>
               <p className="text-white/80 whitespace-pre-wrap">{content.researchData.response}</p>
               {/* Or display multiple fields if your API returns more */}
             </div>
@@ -270,15 +270,22 @@ export const ResponseWindow = ({ windowId, content, isMinimized }) => {
                 </div>
               </div>
             )}
-            
+
             <div className="bg-white/10 rounded-lg p-6">
-              <h4 className="text-white font-medium mb-3 text-lg">Institution Library</h4>
+              <h4 className="text-white font-medium mb-3 text-lg">Additional Information</h4>
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-base">
-                  <span className="text-white/60">Enable local access for library articles.</span>
-                  <span className="text-white/80"></span>
+                  <span className="text-white/60">Response Time</span>
+                  <span className="text-white/80">0.34s</span>
                 </div>
-                
+                <div className="flex items-center justify-between text-base">
+                  <span className="text-white/60">Sources</span>
+                  <span className="text-white/80">3 found</span>
+                </div>
+                <div className="flex items-center justify-between text-base">
+                  <span className="text-white/60">Type</span>
+                  <span className="text-white/80 capitalize">{content?.type || 'text'}</span>
+                </div>
               </div>
             </div>
           </div>
