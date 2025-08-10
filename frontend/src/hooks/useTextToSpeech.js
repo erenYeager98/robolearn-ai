@@ -1,123 +1,138 @@
 import { useState, useRef, useCallback } from 'react';
 
-const TEXT_TO_SPEECH_API_URL = 'https://api.erenyeager-dk.live/api/text-to-speech'; // Replace with your actual endpoint
+// Change to your API endpoint
+const TEXT_TO_SPEECH_API_URL = 'https://192.168.29.36:8000/api/text-to-speech';
+
+// Simple markdown stripper (basic)
+const stripMarkdown = (md) => {
+  if (!md) return "";
+  return md
+    .replace(/!\[.*?\]\(.*?\)/g, "")       // remove images
+    .replace(/\[([^\]]+)\]\((.*?)\)/g, "$1") // remove links but keep text
+    .replace(/[`*_>{}#+\-~]/g, "")          // remove formatting chars
+    .replace(/\n+/g, " ")                   // replace newlines with spaces
+    .trim();
+};
 
 export const useTextToSpeech = () => {
   const [state, setState] = useState({
     isPlaying: false,
     playingId: null,
-    isLoading: false
+    isLoading: false,
+    currentWordIndex: -1 // start before first word
   });
-  
+
   const audioRef = useRef(null);
   const currentIdRef = useRef(null);
+  const highlightTimerRef = useRef(null);
+
+  const clearHighlightTimer = () => {
+    if (highlightTimerRef.current) {
+      clearInterval(highlightTimerRef.current);
+      highlightTimerRef.current = null;
+    }
+  };
 
   const playAudio = useCallback(async (id, text) => {
-    console.log(`[🔊] Playing audio for ID: ${id,text}`);
     try {
-      // Stop any currently playing audio
+      // Clean up existing audio and timers
       if (audioRef.current) {
         audioRef.current.pause();
         audioRef.current = null;
       }
+      clearHighlightTimer();
 
-      setState(prev => ({ ...prev, isLoading: true, playingId: id }));
+      // Strip markdown for reading/highlighting
+      const cleanText = stripMarkdown(text);
+      const words = cleanText.split(/\s+/).filter(Boolean);
+      
+      setState(prev => ({
+        ...prev,
+        isLoading: true,
+        playingId: id,
+        currentWordIndex: -1
+      }));
       currentIdRef.current = id;
 
-      // Send text to your TTS endpoint
+      // Fetch audio from backend
       const response = await fetch(TEXT_TO_SPEECH_API_URL, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          text: text,
-          voice: 'en-US-Standard-A', // Adjust based on your TTS service
+          text: cleanText,
+          voice: 'en-US-Standard-A',
           speed: 1.0
         })
       });
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
-      // Get audio blob from response
       const audioBlob = await response.blob();
       const audioUrl = URL.createObjectURL(audioBlob);
-      
-      // Only proceed if this is still the current request
-      if (currentIdRef.current === id) {
-        const audio = new Audio(audioUrl);
-        audioRef.current = audio;
 
-        audio.onloadeddata = () => {
-          if (currentIdRef.current === id) {
-            setState(prev => ({ ...prev, isLoading: false, isPlaying: true }));
-          }
-        };
-
-        audio.onended = () => {
-          if (currentIdRef.current === id) {
-            setState(prev => ({ ...prev, isPlaying: false, playingId: null }));
-            URL.revokeObjectURL(audioUrl);
-            audioRef.current = null;
-            currentIdRef.current = null;
-          }
-        };
-
-        audio.onerror = () => {
-          if (currentIdRef.current === id) {
-            setState(prev => ({ ...prev, isPlaying: false, playingId: null, isLoading: false }));
-            URL.revokeObjectURL(audioUrl);
-            audioRef.current = null;
-            currentIdRef.current = null;
-          }
-        };
-
-        await audio.play();
-      } else {
-        // Clean up if request was cancelled
+      if (currentIdRef.current !== id) {
         URL.revokeObjectURL(audioUrl);
+        return;
       }
 
-    } catch (error) {
-      console.error('Error playing audio:', error);
-      
-      // Fallback to browser's built-in speech synthesis
-      if (currentIdRef.current === id) {
-        try {
-          const utterance = new SpeechSynthesisUtterance(text);
-          utterance.rate = 0.9;
-          utterance.pitch = 1;
-          utterance.volume = 0.8;
-          
-          utterance.onstart = () => {
-            if (currentIdRef.current === id) {
-              setState(prev => ({ ...prev, isLoading: false, isPlaying: true }));
+      const audio = new Audio(audioUrl);
+      audioRef.current = audio;
+
+      audio.onloadeddata = () => {
+        if (currentIdRef.current === id) {
+          setState(prev => ({ ...prev, isLoading: false, isPlaying: true }));
+
+          // Approximate timing
+          const timePerWord = audio.duration / words.length;
+
+          let index = 0;
+          setState(prev => ({ ...prev, currentWordIndex: 0 }));
+
+          highlightTimerRef.current = setInterval(() => {
+            index++;
+            if (index < words.length) {
+              setState(prev => ({ ...prev, currentWordIndex: index }));
+            } else {
+              clearHighlightTimer();
             }
-          };
-          
-          utterance.onend = () => {
-            if (currentIdRef.current === id) {
-              setState(prev => ({ ...prev, isPlaying: false, playingId: null }));
-              currentIdRef.current = null;
-            }
-          };
-          
-          utterance.onerror = () => {
-            if (currentIdRef.current === id) {
-              setState(prev => ({ ...prev, isPlaying: false, playingId: null, isLoading: false }));
-              currentIdRef.current = null;
-            }
-          };
-          
-          speechSynthesis.speak(utterance);
-        } catch (fallbackError) {
-          console.error('Fallback TTS also failed:', fallbackError);
-          setState(prev => ({ ...prev, isPlaying: false, playingId: null, isLoading: false }));
+          }, timePerWord * 1000);
+        }
+      };
+
+      audio.onended = () => {
+        if (currentIdRef.current === id) {
+          clearHighlightTimer();
+          setState(prev => ({
+            ...prev,
+            isPlaying: false,
+            playingId: null,
+            currentWordIndex: -1
+          }));
+          URL.revokeObjectURL(audioUrl);
+          audioRef.current = null;
           currentIdRef.current = null;
         }
-      }
+      };
+
+      audio.onerror = () => {
+        if (currentIdRef.current === id) {
+          clearHighlightTimer();
+          setState(prev => ({
+            ...prev,
+            isPlaying: false,
+            playingId: null,
+            isLoading: false,
+            currentWordIndex: -1
+          }));
+          URL.revokeObjectURL(audioUrl);
+          audioRef.current = null;
+          currentIdRef.current = null;
+        }
+      };
+
+      await audio.play();
+    } catch (error) {
+      console.error('Error playing audio:', error);
     }
   }, []);
 
@@ -126,13 +141,17 @@ export const useTextToSpeech = () => {
       audioRef.current.pause();
       audioRef.current = null;
     }
-    
-    // Stop speech synthesis if it's being used
+    clearHighlightTimer();
     if (speechSynthesis.speaking) {
       speechSynthesis.cancel();
     }
-    
-    setState(prev => ({ ...prev, isPlaying: false, playingId: null, isLoading: false }));
+    setState(prev => ({
+      ...prev,
+      isPlaying: false,
+      playingId: null,
+      isLoading: false,
+      currentWordIndex: -1
+    }));
     currentIdRef.current = null;
   }, []);
 

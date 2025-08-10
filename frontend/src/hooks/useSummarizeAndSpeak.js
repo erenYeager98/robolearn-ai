@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback } from 'react';
 
-const SUMMARIZE_API = 'https://api.erenyeager-dk.live/api/summarize'; // Change if needed
-const TTS_API = 'https://api.erenyeager-dk.live/api/text-to-speech';
+const SUMMARIZE_API = 'https://192.168.29.36:8000/api/summarize'; // Change if needed
+const TTS_API = 'https://192.168.29.36:8000/api/text-to-speech';
 
 export const useSummarizeAndSpeak = () => {
   const [isLoading, setIsLoading] = useState(false);

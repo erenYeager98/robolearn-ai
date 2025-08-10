@@ -34,26 +34,48 @@ def _clean_hf_output(decoded_text: str) -> str:
 def generate_research_response(tokenizer, model, device, question: str, emotion: str) -> str:
     """Generates a response from the research model."""
     if emotion.lower() in ["neutral", "sad"]:
-        emotion_instruction = "The user is in a calm or low mood, so provide a basic, clear outline of the topic that is easy to follow and not too dense."
+        emotion_instruction = (
+            "The user is in a calm or low mood, so explain the topic thoroughly but in a gentle and easy-to-follow manner."
+        )
     elif emotion.lower() in ["happy", "excited", "joy"]:
-        emotion_instruction = "The user is in a good mood, so feel free to include a bit more depth and detail in your explanation."
+        emotion_instruction = (
+            "The user is in a good mood, so you can explain the topic with enthusiasm, depth, and engaging details."
+        )
     else:
-        emotion_instruction = "Adjust your response tone to suit the user's emotion. Prioritize clarity."
+        emotion_instruction = (
+            "Adjust your response tone to suit the user's emotion. Prioritize clarity and depth."
+        )
 
     dynamic_instruction = (
-        f"You are a smart, friendly AI learning assistant.\n"
-        f"Always respond with a concise and clear explanation (within 100–150 words).\n"
-        f"If the query is vague, ask for clarification.\n{emotion_instruction}\n"
-        f"Your tone should remain helpful, supportive, and curious."
+        f"You are a knowledgeable, friendly teacher who explains topics thoroughly.\n"
+        f"Always respond with a detailed, structured explanation of about 500–600 words.\n"
+        f"Break the content into clear sections or paragraphs, and use examples when appropriate.\n"
+        f"If the query is vague, ask for clarification before explaining.\n"
+        f"{emotion_instruction}\n"
+        f"Your tone should remain helpful, supportive, engaging, and educational."
     )
-    prompt = f"<|start_header_id|>system<|end_header_id|>\n{dynamic_instruction}<|eot_id|>\n<|start_header_id|>user<|end_header_id|>\nQuery: {question}\nEmotion: {emotion}<|eot_id|>\n<|start_header_id|>assistant<|end_header_id|>\n"
+
+    prompt = (
+        f"<|start_header_id|>system<|end_header_id|>\n{dynamic_instruction}<|eot_id|>\n"
+        f"<|start_header_id|>user<|end_header_id|>\nQuery: {question}\nEmotion: {emotion}<|eot_id|>\n"
+        f"<|start_header_id|>assistant<|end_header_id|>\n"
+    )
     
     inputs = tokenizer(prompt, return_tensors="pt").to(device)
     with torch.no_grad():
-        output = model.generate(**inputs, max_new_tokens=256, do_sample=True, temperature=0.7, top_p=0.9, repetition_penalty=1.1, eos_token_id=tokenizer.eos_token_id)
+        output = model.generate(
+            **inputs,
+            max_new_tokens=1024,  # Increased for longer output
+            do_sample=True,
+            temperature=0.7,
+            top_p=0.9,
+            repetition_penalty=1.1,
+            eos_token_id=tokenizer.eos_token_id
+        )
     
     decoded = tokenizer.decode(output[0], skip_special_tokens=False)
     return _clean_hf_output(decoded)
+
 
 def generate_summary(tokenizer, model, device, content: str) -> str:
     """Generates a summary from the summarize model."""

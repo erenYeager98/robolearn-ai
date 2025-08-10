@@ -5,6 +5,7 @@ import { SearchBar } from './SearchBar';
 import { ResponseWindow } from './ResponseWindow';
 import { CameraWindow } from './CameraWindow';
 import { ScholarViewWindow } from './ScholarViewWindow';
+import { ImageDisplayWindow } from './ImageDisplayWindow';
 
 export const WindowManager = () => {
   const { windows, activeWindow } = useWindows();
@@ -52,11 +53,11 @@ export const WindowManager = () => {
                   className="flex-shrink-0"
                 >
                   {(window.type === 'response' || window.type === 'image-response' || window.type === 'upload') && (
-                    <ResponseWindow 
-                      windowId={window.id}
-                      content={window.content}
-                      isMinimized={true}
-                    />
+                    <ResponseWindow
+                    windowId={maximizedWindow.id}
+                    content={maximizedWindow.content}
+                    titlePrefix={maximizedWindow.content.type === 'local' ? 'Local' : 'Global'}
+                  />
                   )}
                   {window.type === 'camera' && (
                     <CameraWindow 
@@ -104,11 +105,18 @@ export const WindowManager = () => {
                 className="w-full"
               >
                 {(maximizedWindow.type === 'response' || maximizedWindow.type === 'image-response' || maximizedWindow.type === 'upload') && (
-                  <ResponseWindow 
-                    windowId={maximizedWindow.id}
-                    content={maximizedWindow.content}
-                  />
+                  <div className="grid grid-cols-2 gap-6">
+                    {/* Left: Text response */}
+                    <ResponseWindow 
+                      windowId={maximizedWindow.id}
+                      content={maximizedWindow.content}
+                    />
+
+                    {/* Right: Image display */}
+                    <ImageDisplayWindow imageUrl={maximizedWindow.content?.image} />
+                  </div>
                 )}
+
                 {maximizedWindow.type === 'camera' && (
                   <CameraWindow 
                     windowId={maximizedWindow.id}

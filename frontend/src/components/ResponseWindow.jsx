@@ -11,9 +11,13 @@ import rehypeKatex from 'rehype-katex';
 import 'katex/dist/katex.min.css';
 import ReactMarkdown from 'react-markdown';
 
+
+
+
 export const ResponseWindow = ({ windowId, content, isMinimized }) => {
+
   const { minimizeWindow, maximizeWindow, closeWindow } = useWindows();
-  const { playingId, isPlaying, isLoading: ttsLoading, playAudio, stopAudio } = useTextToSpeech();
+  const { playingId, isPlaying, isLoading: ttsLoading, playAudio, stopAudio, currentWordIndex } = useTextToSpeech();
 
   const getWindowIcon = () => {
     switch (content?.type) {
@@ -199,6 +203,17 @@ export const ResponseWindow = ({ windowId, content, isMinimized }) => {
                   remarkPlugins={[remarkMath]}
                   rehypePlugins={[rehypeKatex]}
                 />
+                <div>
+    {content.response.split(" ").map((word, i) => (
+     <span
+  key={i}
+  className={i <= currentWordIndex ? "bg-yellow-400 text-black" : ""}
+>
+  {word}{" "}
+</span>
+
+    ))}
+  </div>
 
               </div>
             </div>

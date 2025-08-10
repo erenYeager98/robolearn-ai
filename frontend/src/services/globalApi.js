@@ -1,6 +1,6 @@
-const RESEARCH_API_URL = 'https://api.erenyeager-dk.live/api/research'; // Adjust this to your actual endpoint URL
+const RESEARCH_API_URL = 'https://192.168.29.36:8000/api/research'; // Adjust this to your actual endpoint URL
 
-export const searchResearch = async (question,emotion) => {
+export const searchGlobalLLM = async (question,emotion) => {
   console.log('Searching research for:', question);
   try {
     const response = await fetch(RESEARCH_API_URL, {
