@@ -3,7 +3,6 @@ import subprocess
 import tempfile
 import os
 from app.core.config import settings
-import whisperx
 
 def load_whisper_model():
     """Loads the Whisper model instance."""
@@ -35,33 +34,25 @@ async def transcribe_audio(model, audio_file):
             os.remove(wav_path)
 
 def generate_tts_audio(text: str) -> bytes:
+    """Generates speech from text using Piper and returns audio bytes."""
     with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as temp_wav:
-        wav_path = temp_wav.name
+        temp_wav_path = temp_wav.name
 
-    # Generate speech with Piper
-    subprocess.run(
-        [settings.PIPER_EXECUTABLE, "--model", settings.PIPER_MODEL_PATH, "--output_file", wav_path],
-        input=text.encode(),
-        check=True
-    )
+    try:
+        process = subprocess.Popen(
+            [settings.PIPER_EXECUTABLE, "--model", settings.PIPER_MODEL_PATH, "--output_file", temp_wav_path],
+            stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
+        process.stdin.write(text.encode())
+        process.stdin.close()
+        stdout, stderr = process.communicate()
 
-    # Load WhisperX model
-    model = whisperx.load_model("base", device="cpu")
-    audio = whisperx.load_audio(wav_path)
-    result = model.transcribe(audio)
+        if process.returncode != 0:
+            raise RuntimeError(f"Piper error: {stderr.decode()}")
 
-    # Extract word-level timestamps
-    word_timestamps = []
-    for seg in result["segments"]:
-        for word_info in seg["words"]:
-            word_timestamps.append({
-                "word": word_info["word"],
-                "start": word_info["start"],
-                "end": word_info["end"]
-            })
-
-    with open(wav_path, "rb") as f:
-        audio_data = f.read()
-
-    os.remove(wav_path)
-    return audio_data, word_timestamps
+        with open(temp_wav_path, "rb") as f:
+            audio_data = f.read()
+        return audio_data
+    finally:
+        if os.path.exists(temp_wav_path):
+            os.remove(temp_wav_path)

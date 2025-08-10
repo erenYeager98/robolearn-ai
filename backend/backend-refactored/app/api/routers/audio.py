@@ -3,7 +3,6 @@ from fastapi.responses import JSONResponse
 from app.models.schemas import TTSRequest
 from app.services import audio_service
 from app.api.deps import get_whisper_model
-import base64
 
 router = APIRouter()
 
@@ -24,10 +23,9 @@ async def transcribe_audio_endpoint(
 @router.post("/text-to-speech")
 async def text_to_speech_endpoint(request: TTSRequest):
     try:
-        audio_data, word_timestamps = audio_service.generate_tts_audio(request.text)
-        return JSONResponse(content={
-            "audioBase64": base64.b64encode(audio_data).decode("utf-8"),
-            "timestamps": word_timestamps
-        })
-    except Exception as e:
+        audio_data = audio_service.generate_tts_audio(request.text)
+        return Response(content=audio_data, media_type="audio/wav")
+    except RuntimeError as e:
         raise HTTPException(status_code=500, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {e}")
