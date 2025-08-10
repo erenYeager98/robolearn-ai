@@ -9,8 +9,11 @@ import { SearchModeModal } from './SearchModeModal';
 import { searchScholar } from '../services/scholarApi';
 import { searchGlobalLLM } from '../services/globalApi';
 import { searchLocalLLM } from '../services/localApi';
+import { OnScreenKeyboard } from "./OnScreenKeyboard"; // import the component
+
 
 export const SearchBar = ({ isMinimized, onSearch }) => {
+  const [showKeyboard, setShowKeyboard] = useState(false);
   const [query, setQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [showModeModal, setShowModeModal] = useState(false);
@@ -41,6 +44,14 @@ export const SearchBar = ({ isMinimized, onSearch }) => {
     setShowModeModal(true);
   };
 
+  const handleKeyPress = (char) => {
+    if (char === "BACKSPACE") {
+      setQuery((prev) => prev.slice(0, -1));
+    } else {
+      setQuery((prev) => prev + char);
+    }
+  };
+  
   // When user chooses Local or Global in modal
   const handleModeSelect = async (mode) => {
     setIsSearching(true);
@@ -152,6 +163,8 @@ export const SearchBar = ({ isMinimized, onSearch }) => {
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="What do you wanna know ? . . ."
+                onFocus={() => setShowKeyboard(true)} // show on click
+
                 className={`flex-1 bg-transparent text-white placeholder-white/50 outline-none ${
                   isMinimized ? 'text-base' : 'text-xl'
                 } min-w-0`}
@@ -200,7 +213,15 @@ export const SearchBar = ({ isMinimized, onSearch }) => {
           </motion.div>
         </div>
       </motion.div>
-
+      
+      <AnimatePresence>
+        {showKeyboard && (
+          <OnScreenKeyboard
+            onKeyPress={handleKeyPress}
+            onClose={() => setShowKeyboard(false)}
+          />
+        )}
+      </AnimatePresence>
       {/* Modal */}
       <SearchModeModal
         isOpen={showModeModal}
