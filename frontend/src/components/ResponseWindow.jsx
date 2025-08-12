@@ -1,5 +1,5 @@
 import React from 'react';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react'; // Import useRef
 import { motion } from 'framer-motion';
 import { Minimize2, Maximize2, X, FileText, Image, Upload, Volume2, VolumeX } from 'lucide-react';
 import { useWindows } from '../contexts/WindowContext';
@@ -18,6 +18,10 @@ export const ResponseWindow = ({ windowId, content, isMinimized }) => {
 
   const { minimizeWindow, maximizeWindow, closeWindow } = useWindows();
   const { playingId, isPlaying, isLoading: ttsLoading, playAudio, stopAudio, currentWordIndex } = useTextToSpeech();
+  
+  // Create a ref for the scrollable content area
+  const scrollContainerRef = useRef(null);
+
 
   const getWindowIcon = () => {
     switch (content?.type) {
@@ -37,7 +41,7 @@ export const ResponseWindow = ({ windowId, content, isMinimized }) => {
       case 'upload':
         return 'File Upload';
       default:
-        return 'Search Results';
+        return 'Let\'s Learn';
     }
   };
 
@@ -56,6 +60,32 @@ export const ResponseWindow = ({ windowId, content, isMinimized }) => {
     handleReadAloud();
   }
   }, [content?.response]);
+
+
+  // useEffect for auto-scrolling
+  useEffect(() => {
+    const scrollableDiv = scrollContainerRef.current;
+    
+    // Only scroll if content is loaded and the div exists
+    if (!content.isLoading && content.response && scrollableDiv) {
+      
+      const scrollSpeed = 1; // Pixels to scroll per interval. Adjust for faster/slower speed.
+      const scrollIntervalTime = 90; // Milliseconds between each scroll step.
+
+      const scrollInterval = setInterval(() => {
+        // Check if we've reached the bottom of the scrollable area
+        if (scrollableDiv.scrollTop + scrollableDiv.clientHeight >= scrollableDiv.scrollHeight) {
+          clearInterval(scrollInterval); // Stop scrolling when the end is reached
+        } else {
+          scrollableDiv.scrollTop += scrollSpeed; // Scroll down by the specified amount
+        }
+      }, scrollIntervalTime);
+
+      // Cleanup function to clear the interval
+      return () => clearInterval(scrollInterval);
+    }
+  }, [content.isLoading, content.response]); // Dependencies: run this effect when loading state or response changes
+
 
   if (isMinimized) {
     return (
@@ -106,12 +136,12 @@ export const ResponseWindow = ({ windowId, content, isMinimized }) => {
           )}
         </div>
         <div className="flex items-center space-x-2">
-          <button
+          {/* <button
             onClick={() => minimizeWindow(windowId)}
             className="p-3 rounded-full bg-white/20 hover:bg-white/30 transition-colors"
           >
             <Minimize2 className="w-5 h-5 text-white/70" />
-          </button>
+          </button> */}
           <button
             onClick={() => closeWindow(windowId)}
             className="p-3 rounded-full bg-white/20 hover:bg-red-500/50 transition-colors"
@@ -121,7 +151,8 @@ export const ResponseWindow = ({ windowId, content, isMinimized }) => {
         </div>
       </div>
 
-      <div className="p-8 min-h-[32rem] max-h-[40rem] overflow-y-auto response-window-content">
+      {/* Attach the ref to the scrollable div here */}
+      <div ref={scrollContainerRef} className="p-8 min-h-[32rem] max-h-[40rem] overflow-y-auto response-window-content">
         {content.isLoading ? (
           <div className="space-y-4">
             {/* Main response skeleton */}
@@ -300,23 +331,7 @@ return (
               </div>
             )}
 
-            <div className="bg-white/10 rounded-lg p-6">
-              <h4 className="text-white font-medium mb-3 text-lg">Additional Information</h4>
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-base">
-                  <span className="text-white/60">Response Time</span>
-                  <span className="text-white/80">0.34s</span>
-                </div>
-                <div className="flex items-center justify-between text-base">
-                  <span className="text-white/60">Sources</span>
-                  <span className="text-white/80">3 found</span>
-                </div>
-                <div className="flex items-center justify-between text-base">
-                  <span className="text-white/60">Type</span>
-                  <span className="text-white/80 capitalize">{content?.type || 'text'}</span>
-                </div>
-              </div>
-            </div>
+            
           </div>
         )}
       </div>

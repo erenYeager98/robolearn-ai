@@ -124,14 +124,17 @@ export const SearchBar = ({ isMinimized, onSearch }) => {
     clearTimeout(sessionTimerRef.current);
     if (session.isActive && session.level < 3) {
       sessionTimerRef.current = setTimeout(() => {
+              console.log(`✅ TIMER STARTED: Duration: 5 seconds, Level: ${session.level}`);
+
         setSession(prev => ({ ...prev, isActive: false })); // Pause session
         setShowBreakModal(true); // Ask for a break
-      }, 5 * 60 * 1000); // 5 minutes
+      }, 1 * 10 * 1000); // 5 minutes
     }
   }, [session.isActive, session.level]);
 
 
-  const executeSearch = async (searchQuery, searchMode, level) => {
+const executeSearch = async (searchQuery, searchMode, level) => {
+    console.log("--> Checkpoint 2: Inside executeSearch function.");
     setIsSearching(true);
     const llmFunction = searchMode === 'local' ? searchLocalLLM : searchGlobalLLM;
     const windowId = searchMode === 'local' ? 'local-response' : 'text-response';
@@ -144,7 +147,8 @@ export const SearchBar = ({ isMinimized, onSearch }) => {
       createWindow({ id: windowId, type: 'response', content: { query: searchQuery, response: '', type: searchMode, isLoading: true }});
     }
 
-    try { 
+    try {
+      console.log("--> Checkpoint 3: About to call LLM and image APIs.");
       const llmData = await llmFunction(searchQuery, emotionData?.emotion, level);
       const imgRes = await fetch("https://api.erenyeager-dk.live/api/gen_keywords", {
         method: "POST", headers: { "Content-Type": "application/json" },
@@ -153,26 +157,24 @@ export const SearchBar = ({ isMinimized, onSearch }) => {
       const imgData = await imgRes.json();
       
       updateWindowContent(windowId, {
-        query: searchQuery,
-        response: llmData.answer || 'No response received',
+        query: searchQuery, response: llmData.answer || 'No response received',
         imageUrls: imgData.answer || ["https://uprodemy.com/wp-content/uploads/2023/04/rpa-concept-with-blurry-hand-touching-screen.jpg"],
         type: searchMode, isLoading: false, scholarLoading: true
       });
       
+      console.log("--> Checkpoint 4: Main APIs successful. Fetching scholar data.");
       searchScholar(searchQuery).then(scholarData => {
-        updateWindowContent(windowId, {
-          imageUrls: imgData.answer,
-          response: llmData.answer,
-           scholarData,
-          scholarLoading: false });
+        updateWindowContent(windowId, {response:llmData.answer,imageUrls: imgData.answer, scholarData, scholarLoading: false });
       }).catch(() => {
         updateWindowContent(windowId, { scholarError: 'Failed to load academic results', scholarLoading: false });
       });
 
     } catch (error) {
+      console.error("### ERROR in executeSearch:", error); // This will catch API errors
       updateWindowContent(windowId, { query: searchQuery, response: `Error connecting to ${searchMode} model`, isLoading: false });
     }
     setIsSearching(false);
+    console.log("--> Checkpoint 5: executeSearch function is finished.");
   };
 
 
@@ -192,23 +194,30 @@ export const SearchBar = ({ isMinimized, onSearch }) => {
     else setQuery((prev) => prev + char);
   };
 
-  const handleModeSelect = async (mode) => {
+const handleModeSelect = async (mode) => {
+    console.log("--> Checkpoint 1: handleModeSelect called with mode:", mode);
     setShowModeModal(false);
-    clearTimers(); // A new search always resets the session
+    clearTimers();
+    
     await executeSearch(pendingQuery, mode, learningLevel);
+    
+    console.log("--> Checkpoint 6: Returned from executeSearch. About to set session.");
+
     // Start the session after the initial search
     if (learningLevel < 3) {
       setSession({ isActive: true, query: pendingQuery, mode: mode, level: learningLevel });
+      console.log("✅ SESSION STARTED: setSession has been called.");
+    } else {
+      console.log("SESSION SKIPPED: Learning level is 3, no timer needed.");
     }
   };
-
   // --- START: Handlers for Session Modals ---
   const handleBreakResponse = (doBreak) => {
     setShowBreakModal(false);
     if (doBreak) {
       breakTimerRef.current = setTimeout(() => {
         setShowBreakModal(true); // After 3 mins, ask again
-      }, 3 * 60 * 1000); // 3 minutes
+      }, 1 * 20 * 1000); // 3 minutes
     } else {
       clearTimeout(breakTimerRef.current);
       setShowDeeperModal(true); // Ask to go deeper

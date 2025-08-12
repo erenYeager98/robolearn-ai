@@ -96,7 +96,7 @@ export const ImageDisplayWindow = ({ imageUrls }) => {
         <motion.img
           key={currentIndex}
           src={imageUrls[currentIndex]}
-          alt={`Display ${currentIndex + 1}`}
+          alt={``}
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.95 }}
