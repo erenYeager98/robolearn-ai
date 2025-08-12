@@ -49,7 +49,7 @@ export const OnScreenKeyboard = ({ onKeyPress, onClose }) => {
     >
       {/* Header */}
       <div className="flex justify-between items-center mb-3 cursor-move">
-        <h2 className="text-gray-800 font-semibold">Keyboard</h2>
+        <h2 className="text-gray-800 font-semibold"></h2>
         <button
           onClick={onClose}
           className="p-1 rounded-full hover:bg-gray-200 transition"

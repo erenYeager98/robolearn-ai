@@ -205,16 +205,20 @@ export const ResponseWindow = ({ windowId, content, isMinimized }) => {
   const isSpoken = i <= currentWordIndex;
   const isCurrent = i === currentWordIndex;
 
-  return (
+return (
     <span
       key={i}
       className={`
-        px-1 py-0.5 rounded-md transition-all duration-200 ease-out
-        ${isCurrent 
-          ? "bg-gradient-to-r from-yellow-300 via-yellow-400 to-yellow-500 text-black shadow-md shadow-yellow-300/50"
+        relative /* Ensures proper stacking */
+        transition-all duration-300 ease-in-out /* Smooths all transitions */
+        ${isCurrent
+          // ✨ The currently spoken word: an animated, shining gradient text
+          ? 'text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-500 via-pink-500 to-fuchsia-500 text-shadow-glow animate-text-shine scale-105'
+          // A word that has already been spoken: a bright, but non-animated color
           : isSpoken
-            ? "bg-yellow-200/30 text-yellow-100"
-            : "text-white/80"
+            ? 'text-purple-300/90'
+            // A word that has not been spoken yet: dimmed to recede into the background
+            : 'text-white/50'
         }
       `}
     >

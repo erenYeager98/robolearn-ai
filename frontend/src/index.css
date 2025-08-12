@@ -4,6 +4,8 @@
 
 /* Custom Scrollbar Styles */
 /* Webkit browsers (Chrome, Safari, Edge) */
+
+
 html, body {
   @apply h-auto min-h-screen overflow-y-scroll;
 }
@@ -91,4 +93,25 @@ html {
 
 .response-window-content::-webkit-scrollbar-thumb {
   transition: all 0.3s ease;
+}
+
+@keyframes text-shine {
+  0% {
+    background-position: 200% center;
+  }
+  100% {
+    background-position: -200% center;
+  }
+}
+
+.animate-text-shine {
+  /* The gradient should be larger than the text to allow for movement */
+  background-size: 200% auto;
+  /* Apply the animation */
+  animation: text-shine 2s linear infinite;
+}
+
+.text-shadow-glow {
+    /* A soft glow that matches the gradient colors */
+    text-shadow: 0 0 8px rgba(217, 70, 239, 0.6), 0 0 12px rgba(236, 72, 153, 0.4);
 }

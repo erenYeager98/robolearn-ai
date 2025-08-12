@@ -2,7 +2,7 @@
 
 const RESEARCH_API_URL = 'https://api.erenyeager-dk.live/api/local_research'; // Adjust this to your actual endpoint URL
 
-export const searchLocalLLM = async (question,emotion) => {
+export const searchLocalLLM = async (question, emotion, level) => {
   console.log('Searching research for:', question);
   try {
     const response = await fetch(RESEARCH_API_URL, {
@@ -12,7 +12,8 @@ export const searchLocalLLM = async (question,emotion) => {
       },
       body: JSON.stringify({
         question: question,
-        emotion: emotion || 'neutral' // Include emotion if available
+        emotion: emotion || 'neutral',
+        level: level || 1
       })
     });
 
