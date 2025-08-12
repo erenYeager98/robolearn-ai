@@ -73,6 +73,7 @@ export const ResponseWindow = ({ windowId, content, isMinimized }) => {
       </motion.div>
     );
   }
+  
 
   return (
     <motion.div
@@ -198,21 +199,30 @@ export const ResponseWindow = ({ windowId, content, isMinimized }) => {
                 </>
               )}
               <div className="text-white/80 leading-relaxed text-base whitespace-pre-wrap relative z-10">
-                <ReactMarkdown
-                  children={content.response}
-                  remarkPlugins={[remarkMath]}
-                  rehypePlugins={[rehypeKatex]}
-                />
+                
                 <div>
-    {content.response.split(" ").map((word, i) => (
-     <span
-  key={i}
-  className={i <= currentWordIndex ? "bg-yellow-400 text-black" : ""}
->
-  {word}{" "}
-</span>
+    {content.response.split(" ").map((word, i) => {
+  const isSpoken = i <= currentWordIndex;
+  const isCurrent = i === currentWordIndex;
 
-    ))}
+  return (
+    <span
+      key={i}
+      className={`
+        px-1 py-0.5 rounded-md transition-all duration-200 ease-out
+        ${isCurrent 
+          ? "bg-gradient-to-r from-yellow-300 via-yellow-400 to-yellow-500 text-black shadow-md shadow-yellow-300/50"
+          : isSpoken
+            ? "bg-yellow-200/30 text-yellow-100"
+            : "text-white/80"
+        }
+      `}
+    >
+      {word}{" "}
+    </span>
+  );
+})}
+
   </div>
 
               </div>

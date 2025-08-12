@@ -10,6 +10,7 @@ import { searchScholar } from '../services/scholarApi';
 import { searchGlobalLLM } from '../services/globalApi';
 import { searchLocalLLM } from '../services/localApi';
 import { OnScreenKeyboard } from "./OnScreenKeyboard"; // import the component
+import { img } from 'framer-motion/client';
 
 
 export const SearchBar = ({ isMinimized, onSearch }) => {
@@ -51,7 +52,7 @@ export const SearchBar = ({ isMinimized, onSearch }) => {
       setQuery((prev) => prev + char);
     }
   };
-  
+
   // When user chooses Local or Global in modal
   const handleModeSelect = async (mode) => {
     setIsSearching(true);
@@ -83,20 +84,33 @@ export const SearchBar = ({ isMinimized, onSearch }) => {
 
     try {
       const llmData = await llmFunction(pendingQuery, emotionData?.emotion);
-
-      updateWindowContent(windowId, {
-        query: pendingQuery,
-        response: llmData.answer || 'No response received',
-        image: llmData.imageUrl || null,
-        type: mode,
-        isLoading: false,
-        scholarLoading: true
-      });
+ // ✅ fetch images from backend
+  const imgRes = await fetch("https://api.erenyeager-dk.live/api/gen_keywords", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      question: pendingQuery,
+      emotion: emotionData?.emotion || ""
+    })
+  });
+  const imgData = await imgRes.json();
+  
+console.log(imgData.answer);
+  updateWindowContent(windowId, {
+    query: pendingQuery,
+    response: llmData.answer || 'No response received',
+    imageUrls: imgData.answer || ["https://uprodemy.com/wp-content/uploads/2023/04/rpa-concept-with-blurry-hand-touching-screen.jpg"], // <-- array of image URLs
+    type: mode,
+    isLoading: false,
+    scholarLoading: true
+  });
+     
 
       // Fetch scholar data in background
       searchScholar(pendingQuery)
         .then(scholarData => {
           updateWindowContent(windowId, {
+            imageUrls: imgData.answer,
             response: llmData.answer || 'No response received',
             scholarData,
             scholarLoading: false
@@ -214,6 +228,21 @@ export const SearchBar = ({ isMinimized, onSearch }) => {
         </div>
       </motion.div>
       
+      <style jsx>{`
+  .recording-glow {
+    animation: recordingGlow 2s ease-in-out infinite;
+  }
+
+  @keyframes recordingGlow {
+    0%, 100% {
+      filter: drop-shadow(0 0 10px rgba(59, 130, 246, 0.5));
+    }
+    50% {
+      filter: drop-shadow(0 0 20px rgba(59, 130, 246, 0.8));
+    }
+  }
+`}</style>
+
       <AnimatePresence>
         {showKeyboard && (
           <OnScreenKeyboard

@@ -6,6 +6,7 @@ import { ResponseWindow } from './ResponseWindow';
 import { CameraWindow } from './CameraWindow';
 import { ScholarViewWindow } from './ScholarViewWindow';
 import { ImageDisplayWindow } from './ImageDisplayWindow';
+import { RotateCcw } from "lucide-react";
 
 export const WindowManager = () => {
   const { windows, activeWindow } = useWindows();
@@ -22,7 +23,17 @@ export const WindowManager = () => {
     <div className="min-h-screen relative">
       {/* Top bar - always visible */}
       <div className="fixed top-0 left-0 right-0 z-50 p-4">
-        <div className="flex items-center justify-center">
+        <div className="flex items-center justify-center w-full">
+
+          {/* Left: Reload Button */}
+          <button
+            onClick={() => window.location.reload()}
+            className="p-3 rounded-full bg-white/20 hover:bg-white/30 transition"
+            title="Reload App"
+          >
+            <RotateCcw className="w-5 h-5 text-white" />
+          </button>
+
           <div className="flex items-center space-x-4 max-w-full overflow-x-auto">
             {/* Search bar at top when not centered */}
             <AnimatePresence>
@@ -113,7 +124,7 @@ export const WindowManager = () => {
                     />
 
                     {/* Right: Image display */}
-                    <ImageDisplayWindow imageUrl={maximizedWindow.content?.image} />
+            <ImageDisplayWindow imageUrls={maximizedWindow.content?.imageUrls || []} />
                   </div>
                 )}
 

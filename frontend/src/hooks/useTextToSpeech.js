@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback } from 'react';
 
 // Change to your API endpoint
-const TEXT_TO_SPEECH_API_URL = 'https://192.168.29.36:8000/api/text-to-speech';
+const TEXT_TO_SPEECH_API_URL = 'https://api.erenyeager-dk.live/api/text-to-speech';
 
 // Simple markdown stripper (basic)
 const stripMarkdown = (md) => {
@@ -45,6 +45,7 @@ export const useTextToSpeech = () => {
       // Strip markdown for reading/highlighting
       const cleanText = stripMarkdown(text);
       const words = cleanText.split(/\s+/).filter(Boolean);
+      console.log(cleanText)
       
       setState(prev => ({
         ...prev,

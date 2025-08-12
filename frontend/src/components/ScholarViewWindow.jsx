@@ -41,7 +41,7 @@ export const ScholarViewWindow = ({ windowId, content, isMinimized }) => {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
-      className="w-full max-w-6xl mx-auto bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 shadow-2xl overflow-hidden"
+      className="w-full bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 shadow-2xl overflow-hidden"
     >
       <div className="flex items-center justify-between p-6 border-b border-white/20">
         <div className="flex items-center space-x-3">
