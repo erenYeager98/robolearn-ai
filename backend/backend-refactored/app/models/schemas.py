@@ -4,6 +4,11 @@ from pydantic import BaseModel
 class ResearchQuery(BaseModel):
     question: str
     emotion: str
+    level: int
+
+class ResearchKeyword(BaseModel):
+    question: str
+    emotion: str
 
 class SummarizeRequest(BaseModel):
     content: str

@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     PIPER_MODEL_PATH: str
     IMAGE_DIR: Path = BASE_DIR / "static" / "images"
     TEMP_DIR: Path = BASE_DIR / "temp_uploads"
+    
 
     # Model IDs
     HF_MODEL_ID: str = "meta-llama/Llama-3.2-1B-Instruct"

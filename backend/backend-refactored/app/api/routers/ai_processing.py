@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, UploadFile, File, HTTPException
-from app.models.schemas import ResearchQuery, SummarizeRequest
+from app.models.schemas import ResearchQuery, SummarizeRequest, ResearchKeyword
 from app.api.deps import get_hf_models
 from app.services import ai_service, file_service
 import os
@@ -19,9 +19,43 @@ async def research_endpoint(
         model_research, 
         device, 
         query.question, 
+        query.emotion,
+        query.level
+    )
+    return {"answer": answer}
+
+@router.post("/local_research")
+async def research_endpoint(
+    query: ResearchQuery,
+    models: tuple = Depends(get_hf_models)
+):
+    tokenizer, model_research, _, device = models
+    answer = await asyncio.to_thread(
+        ai_service.generate_local_research_response, 
+        tokenizer, 
+        model_research, 
+        device, 
+        query.question, 
         query.emotion
     )
     return {"answer": answer}
+
+@router.post("/gen_keywords")
+async def research_endpoint(
+    query: ResearchKeyword,
+    models: tuple = Depends(get_hf_models)
+):
+    tokenizer, model_research, _, device = models
+    answer = await asyncio.to_thread(
+        ai_service.gen_keywords, 
+        tokenizer, 
+        model_research, 
+        device, 
+        query.question, 
+        query.emotion
+    )
+    return {"answer": answer}
+
 
 @router.post("/summarize")
 async def summarize_endpoint(

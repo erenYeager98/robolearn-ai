@@ -27,5 +27,7 @@ async def text_to_speech_endpoint(request: TTSRequest):
         return Response(content=audio_data, media_type="audio/wav")
     except RuntimeError as e:
         raise HTTPException(status_code=500, detail=str(e))
+        console.log(e)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {e}")
+        console.log(e)
