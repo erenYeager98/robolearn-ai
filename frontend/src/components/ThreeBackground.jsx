@@ -23,7 +23,7 @@ export const ThreeBackground = () => {
 
     // --- OPTIMIZATION 2: Reduced Particle Count ---
     const particlesGeometry = new THREE.BufferGeometry();
-    const particlesCount = 200; // Reduced from 800
+    const particlesCount = 50; // Reduced from 800
     const posArray = new Float32Array(particlesCount * 3);
     const colorArray = new Float32Array(particlesCount * 3);
 
