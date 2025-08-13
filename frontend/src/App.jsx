@@ -7,7 +7,7 @@ function App() {
   return (
     <WindowProvider>
       <div className="relative overflow-x-hidden">
-        <ThreeBackground />
+        {/* <ThreeBackground /> */}
         <WindowManager />
         
       </div>

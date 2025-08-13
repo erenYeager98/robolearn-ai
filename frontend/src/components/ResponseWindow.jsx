@@ -70,7 +70,7 @@ export const ResponseWindow = ({ windowId, content, isMinimized }) => {
     if (!content.isLoading && content.response && scrollableDiv) {
       
       const scrollSpeed = 1; // Pixels to scroll per interval. Adjust for faster/slower speed.
-      const scrollIntervalTime = 90; // Milliseconds between each scroll step.
+      const scrollIntervalTime = 78; // Milliseconds between each scroll step.
 
       const scrollInterval = setInterval(() => {
         // Check if we've reached the bottom of the scrollable area
