@@ -1,0 +1,11 @@
+fastapi
+uvicorn[standard]
+pydantic-settings
+python-multipart
+requests
+torch
+transformers
+fer
+opencv-python-headless
+openai-whisper
+ollama
