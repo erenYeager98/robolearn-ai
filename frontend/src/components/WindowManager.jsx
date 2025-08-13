@@ -124,7 +124,9 @@ export const WindowManager = () => {
                     />
 
                     {/* Right: Image display */}
-            <ImageDisplayWindow imageUrls={maximizedWindow.content?.imageUrls || []} />
+           <div className="flex items-center justify-center">
+                      <ImageDisplayWindow imageUrls={maximizedWindow.content?.imageUrls || []} />
+                    </div>
                   </div>
                 )}
 
