@@ -1,16 +1,16 @@
 import { useState, useRef, useCallback } from 'react';
 
 // Change to your API endpoint
-const TEXT_TO_SPEECH_API_URL = 'https://api.erenyeager-dk.live/api/text-to-speech';
+const TEXT_TO_SPEECH_API_URL = 'http://localhost:8000/api/text-to-speech';
 
 // Simple markdown stripper (basic)
 const stripMarkdown = (md) => {
   if (!md) return "";
   return md
-    .replace(/!\[.*?\]\(.*?\)/g, "")       // remove images
+    .replace(/!\[.*?\]\(.*?\)/g, "")      // remove images
     .replace(/\[([^\]]+)\]\((.*?)\)/g, "$1") // remove links but keep text
-    .replace(/[`*_>{}#+\-~]/g, "")          // remove formatting chars
-    .replace(/\n+/g, " ")                   // replace newlines with spaces
+    .replace(/[`*_>{}#+\-~]/g, "")        // remove formatting chars
+    .replace(/\n+/g, " ")                // replace newlines with spaces
     .trim();
 };
 
@@ -33,7 +33,7 @@ export const useTextToSpeech = () => {
     }
   };
 
-  const playAudio = useCallback(async (id, text) => {
+  const playAudio = useCallback(async (id, text, options) => {
     try {
       // Clean up existing audio and timers
       if (audioRef.current) {
@@ -45,7 +45,6 @@ export const useTextToSpeech = () => {
       // Strip markdown for reading/highlighting
       const cleanText = stripMarkdown(text);
       const words = cleanText.split(/\s+/).filter(Boolean);
-      console.log(cleanText)
       
       setState(prev => ({
         ...prev,
@@ -69,6 +68,11 @@ export const useTextToSpeech = () => {
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
       const audioBlob = await response.blob();
+      // Check if the blob is valid audio, otherwise it will cause an error
+      if (!audioBlob || audioBlob.size === 0 || !audioBlob.type.startsWith('audio/')) {
+        throw new Error('Invalid audio blob received from API.');
+      }
+      
       const audioUrl = URL.createObjectURL(audioBlob);
 
       if (currentIdRef.current !== id) {
@@ -83,7 +87,7 @@ export const useTextToSpeech = () => {
         if (currentIdRef.current === id) {
           setState(prev => ({ ...prev, isLoading: false, isPlaying: true }));
 
-          // Approximate timing
+          // Approximate timing for word highlighting
           const timePerWord = audio.duration / words.length;
 
           let index = 0;
@@ -112,11 +116,17 @@ export const useTextToSpeech = () => {
           URL.revokeObjectURL(audioUrl);
           audioRef.current = null;
           currentIdRef.current = null;
+
+          if (options && typeof options.onEnd === 'function') {
+            options.onEnd();
+          }
         }
       };
 
+      // MODIFIED: This block now handles errors by skipping to the next item.
       audio.onerror = () => {
         if (currentIdRef.current === id) {
+          console.error(`Audio playback error for ID: ${id}. Skipping to next paragraph.`);
           clearHighlightTimer();
           setState(prev => ({
             ...prev,
@@ -128,24 +138,42 @@ export const useTextToSpeech = () => {
           URL.revokeObjectURL(audioUrl);
           audioRef.current = null;
           currentIdRef.current = null;
+
+          // Call onEnd to trigger the sequence to move to the next paragraph
+          if (options && typeof options.onEnd === 'function') {
+            options.onEnd();
+          }
         }
       };
 
       await audio.play();
     } catch (error) {
-      console.error('Error playing audio:', error);
+      console.error('Error in playAudio:', error);
+      // MODIFIED: The catch block also skips to the next item on error.
+      setState(prev => ({
+        ...prev,
+        isPlaying: false,
+        isLoading: false,
+        playingId: null,
+        currentWordIndex: -1
+      }));
+      
+      // Call onEnd to trigger the sequence to move to the next paragraph
+      if (options && typeof options.onEnd === 'function') {
+        options.onEnd();
+      }
     }
   }, []);
 
   const stopAudio = useCallback(() => {
     if (audioRef.current) {
       audioRef.current.pause();
+      if (audioRef.current.src.startsWith('blob:')) {
+          URL.revokeObjectURL(audioRef.current.src);
+      }
       audioRef.current = null;
     }
     clearHighlightTimer();
-    if (speechSynthesis.speaking) {
-      speechSynthesis.cancel();
-    }
     setState(prev => ({
       ...prev,
       isPlaying: false,
@@ -162,3 +190,4 @@ export const useTextToSpeech = () => {
     stopAudio
   };
 };
+

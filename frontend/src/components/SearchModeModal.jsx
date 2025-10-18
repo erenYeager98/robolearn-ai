@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Globe, HardDrive, X } from 'lucide-react';
+import { Globe, HardDrive, X, BookOpen } from 'lucide-react';
 
 export const SearchModeModal = ({ isOpen, onClose, onSelectMode, query }) => {
   const handleModeSelect = (mode) => {
@@ -36,7 +36,7 @@ export const SearchModeModal = ({ isOpen, onClose, onSelectMode, query }) => {
             </div>
             
             <p className="text-white/70 mb-8 text-center">
-              How would you like to learn about "<span className="text-white font-medium">{query}</span>"?
+              How would you like to learn about "<span className="text-white font-medium">{query || '...'}</span>"?
             </p>
             
             <div className="space-y-4">
@@ -70,6 +70,23 @@ export const SearchModeModal = ({ isOpen, onClose, onSelectMode, query }) => {
                   <div className="text-left">
                     <h4 className="text-white font-medium text-lg">Global Learning</h4>
                     <p className="text-white/60 text-sm">Learn from online resources</p>
+                  </div>
+                </div>
+              </motion.button>
+
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => handleModeSelect('topic')}
+                className="w-full p-6 bg-gradient-to-r from-orange-500/20 to-amber-500/20 hover:from-orange-500/30 hover:to-amber-500/30 rounded-xl border border-white/20 hover:border-white/30 transition-all duration-200 group"
+              >
+                <div className="flex items-center space-x-4">
+                  <div className="p-3 bg-orange-500/30 rounded-full group-hover:bg-orange-500/40 transition-colors">
+                    <BookOpen className="w-6 h-6 text-white" />
+                  </div>
+                  <div className="text-left">
+                    <h4 className="text-white font-medium text-lg">Learn by Topic</h4>
+                    <p className="text-white/60 text-sm">Browse curated educational topics</p>
                   </div>
                 </div>
               </motion.button>

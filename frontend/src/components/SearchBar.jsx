@@ -150,7 +150,7 @@ const executeSearch = async (searchQuery, searchMode, level) => {
     try {
       console.log("--> Checkpoint 3: About to call LLM and image APIs.");
       const llmData = await llmFunction(searchQuery, emotionData?.emotion, level);
-      const imgRes = await fetch("https://api.erenyeager-dk.live/api/gen_keywords", {
+      const imgRes = await fetch("http://localhost:8000/api/gen_keywords", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ question: searchQuery, emotion: emotionData?.emotion || "" })
       });
@@ -195,21 +195,20 @@ const executeSearch = async (searchQuery, searchMode, level) => {
   };
 
 const handleModeSelect = async (mode) => {
-    console.log("--> Checkpoint 1: handleModeSelect called with mode:", mode);
     setShowModeModal(false);
-    clearTimers();
     
-    await executeSearch(pendingQuery, mode, learningLevel);
-    
-    console.log("--> Checkpoint 6: Returned from executeSearch. About to set session.");
-
-    // Start the session after the initial search
-    if (learningLevel < 3) {
-      setSession({ isActive: true, query: pendingQuery, mode: mode, level: learningLevel });
-      console.log("✅ SESSION STARTED: setSession has been called.");
-    } else {
-      console.log("SESSION SKIPPED: Learning level is 3, no timer needed.");
+    if (mode === 'topic') {
+      const maximized = windows.find(w => w.isMaximized);
+      if (maximized) closeWindow(maximized.id);
+      const existingBrowser = findWindowByType('topic-browser');
+      if (existingBrowser) maximizeWindow(existingBrowser.id);
+      else createWindow({ id: 'topic-browser-window', type: 'topic-browser' });
+      return;
     }
+
+    clearTimers();
+    await executeSearch(pendingQuery, mode, learningLevel);
+    if (learningLevel < 3) setSession({ isActive: true, query: pendingQuery, mode: mode, level: learningLevel });
   };
   // --- START: Handlers for Session Modals ---
   const handleBreakResponse = (doBreak) => {

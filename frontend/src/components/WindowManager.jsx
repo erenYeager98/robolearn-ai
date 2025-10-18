@@ -6,24 +6,25 @@ import { ResponseWindow } from './ResponseWindow';
 import { CameraWindow } from './CameraWindow';
 import { ScholarViewWindow } from './ScholarViewWindow';
 import { ImageDisplayWindow } from './ImageDisplayWindow';
-import { RotateCcw } from "lucide-react";
+import { TopicBrowserWindow } from './TopicBrowserWindow';
+import { PresentationWindow } from './PresentationWindow';
+import { RotateCcw , Power } from "lucide-react";
 
 export const WindowManager = () => {
-  const { windows, activeWindow } = useWindows();
+  const { windows } = useWindows();
 
-  const searchWindow = windows.find(w => w.type === 'search');
   const otherWindows = windows.filter(w => w.type !== 'search');
   const maximizedWindow = windows.find(w => w.isMaximized && w.type !== 'search');
   const minimizedWindows = otherWindows.filter(w => w.isMinimized);
 
-  // Search bar should be in center when no other window is maximized
+  // Search bar is centered only when no other window is maximized
   const isSearchCentered = !maximizedWindow;
 
   return (
     <div className="min-h-screen relative">
       {/* Top bar - always visible */}
-      <div className="fixed top-0 left-0 right-0 z-50 p-4">
-        <div className="flex items-center justify-center w-full">
+      <div className="fixed top-0 left-0 right-0 z-50 p-4 ">
+        <div className="flex items-center justify-center w-full gap-x-4">
 
           {/* Left: Reload Button */}
           <button
@@ -32,6 +33,15 @@ export const WindowManager = () => {
             title="Reload App"
           >
             <RotateCcw className="w-5 h-5 text-white" />
+          </button>
+
+          {/* Center: Power Button */}
+          <button
+            onClick={() => console.log('Power button clicked')}
+            className="p-3 rounded-full bg-white/20 hover:bg-white/30 transition"
+            title="Power"
+          >
+            <Power className="w-5 h-5 text-white" />
           </button>
 
           <div className="flex items-center space-x-4 max-w-full overflow-x-auto">
@@ -65,10 +75,10 @@ export const WindowManager = () => {
                 >
                   {(window.type === 'response' || window.type === 'image-response' || window.type === 'upload') && (
                     <ResponseWindow
-                    windowId={maximizedWindow.id}
-                    content={maximizedWindow.content}
-                    titlePrefix={maximizedWindow.content.type === 'local' ? 'Local' : 'Global'}
-                  />
+                      windowId={window.id}
+                      content={window.content}
+                      isMinimized={true}
+                    />
                   )}
                   {window.type === 'camera' && (
                     <CameraWindow 
@@ -115,28 +125,44 @@ export const WindowManager = () => {
                 exit={{ opacity: 0, y: -20 }}
                 className="w-full"
               >
+                {/* Response Window with Image Display (2-column layout) */}
                 {(maximizedWindow.type === 'response' || maximizedWindow.type === 'image-response' || maximizedWindow.type === 'upload') && (
                   <div className="grid grid-cols-2 gap-6">
-                    {/* Left: Text response */}
                     <ResponseWindow 
                       windowId={maximizedWindow.id}
                       content={maximizedWindow.content}
                     />
-
-                    {/* Right: Image display */}
-           <div className="flex items-center justify-center">
+                    <div className="flex items-center justify-center">
                       <ImageDisplayWindow imageUrls={maximizedWindow.content?.imageUrls || []} />
                     </div>
                   </div>
                 )}
 
+                {/* Camera Window (full-width layout) */}
                 {maximizedWindow.type === 'camera' && (
                   <CameraWindow 
                     windowId={maximizedWindow.id}
                   />
                 )}
+                
+                {/* Scholar Window (full-width layout) */}
                 {(maximizedWindow.type === 'scholar-web' || maximizedWindow.type === 'scholar-pdf') && (
                   <ScholarViewWindow 
+                    windowId={maximizedWindow.id}
+                    content={maximizedWindow.content}
+                  />
+                )}
+
+                {/* NEW: Topic Browser Window (full-width layout) */}
+                {maximizedWindow.type === 'topic-browser' && (
+                  <TopicBrowserWindow 
+                    windowId={maximizedWindow.id}
+                  />
+                )}
+
+                {/* NEW: Presentation Viewer Window (full-width layout) */}
+                {maximizedWindow.type === 'presentation-viewer' && (
+                  <PresentationWindow 
                     windowId={maximizedWindow.id}
                     content={maximizedWindow.content}
                   />

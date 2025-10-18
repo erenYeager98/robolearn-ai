@@ -1,6 +1,6 @@
 // services/localApi.js
 
-const RESEARCH_API_URL = 'https://api.erenyeager-dk.live/api/local_research'; // Adjust this to your actual endpoint URL
+const RESEARCH_API_URL = 'http://localhost:8000/api/research'; // Adjust this to your actual endpoint URL
 
 export const searchLocalLLM = async (question, emotion, level) => {
   console.log('Searching research for:', question);
